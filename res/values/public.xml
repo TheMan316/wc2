@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <public type="color" name="colorAccent" id="0x7f010001" />
+    <public type="color" name="colorPrimary" id="0x7f010002" />
+    <public type="color" name="colorPrimaryDark" id="0x7f010003" />
+    <public type="color" name="accent" id="0x7f010000" />
+    <public type="color" name="windowBackground" id="0x7f010004" />
+    <public type="dimen" name="activity_horizontal_margin" id="0x7f020000" />
+    <public type="dimen" name="activity_vertical_margin" id="0x7f020001" />
+    <public type="id" name="activity_wc2" id="0x7f030000" />
+    <public type="id" name="mainLayout" id="0x7f030001" />
+    <public type="id" name="sample_text" id="0x7f030002" />
+    <public type="layout" name="activity_wc2" id="0x7f040000" />
+    <public type="layout" name="background" id="0x7f040001" />
+    <public type="layout" name="main" id="0x7f040002" />
+    <public type="mipmap" name="icon" id="0x7f050000" />
+    <public type="mipmap" name="round_icon" id="0x7f050001" />
+    <public type="raw" name="sub" id="0x7f060000" />
+    <public type="string" name="android_version" id="0x7f070000" />
+    <public type="string" name="app_info" id="0x7f070001" />
+    <public type="string" name="app_name" id="0x7f070002" />
+    <public type="string" name="app_name_mail" id="0x7f070003" />
+    <public type="string" name="device_lang" id="0x7f070004" />
+    <public type="string" name="device_model" id="0x7f070005" />
+    <public type="string" name="waiting" id="0x7f070006" />
+    <public type="style" name="AppTheme" id="0x7f080000" />
+</resources>

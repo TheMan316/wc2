@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="android_version">Android Версии</string>
+    <string name="app_info">О приложении</string>
+    <string name="app_name">World Conqueror 2</string>
+    <string name="app_name_mail">Имя приложения</string>
+    <string name="device_lang">Язык</string>
+    <string name="device_model">Модель</string>
+    <string name="waiting">Подождать</string>
+</resources>

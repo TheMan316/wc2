@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="android_version">Android 版本</string>
+    <string name="app_info">應用程式資訊</string>
+    <string name="app_name">世界征服者2</string>
+    <string name="app_name_mail">應用名稱</string>
+    <string name="device_lang">語言</string>
+    <string name="device_model">型號</string>
+    <string name="waiting">等待</string>
+</resources>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="#ff000000" android:layout_width="fill_parent" android:layout_height="fill_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <RelativeLayout
+        android:id="@id/mainLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" >
+
+        <TextView
+            android:id="@+id/tv_terrain_penalty_infantry_value"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/tv_terrain_penalty_artillery_value"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_terrain_info"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:background="#8B000000"
+        android:divider="#ffffff"
+        android:orientation="vertical"
+        android:showDividers="middle"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.47000003">
+
+        <LinearLayout
+            android:id="@+id/ll_terrain_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_terrain_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp" />
+
+            <TextView
+                android:id="@+id/tv_terrain_name"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_terrain_penalty_infantry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_terrain_penalty_infantry_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/icon_infantry" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_terrain_penalty_artillery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_terrain_penalty_artillery_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/icon_artillery" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_terrain_penalty_armor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_terrain_penalty_armor_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/icon_armor" />
+
+            <TextView
+                android:id="@+id/tv_terrain_penalty_armor_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_terrain_penalty_navy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_terrain_penalty_navy_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/icon_navy" />
+
+            <TextView
+                android:id="@+id/tv_terrain_penalty_navy_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_terrain_penalty_airForce"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_terrain_penalty_airforce_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/icon_airforce" />
+
+            <TextView
+                android:id="@+id/tv_terrain_penalty_airforce_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_terrain_penalty_movement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_terrain_penalty_movement_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/icon_movement" />
+
+            <TextView
+                android:id="@+id/tv_terrain_penalty_movement_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
