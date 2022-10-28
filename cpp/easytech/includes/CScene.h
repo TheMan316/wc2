@@ -75,7 +75,7 @@ struct CArmy {
     bool Is_radiudAttack();
 
     //得到装备的战术卡的数量
-    int Get_count_card();
+    int Get_countOfCard();
     void AddStrength(int hp);
     void Restore_oganization(int o);
     //得到单位的远程攻击半径
@@ -84,7 +84,7 @@ struct CArmy {
     //得到这个军下属师级单位的数量
     int Get_count_oldDesignation();
 
-    void LostCard(int percentNum);
+    void Lost_card(int percentNum);
     void Breakthrough();
 
     int GetMaxStrength();
@@ -191,7 +191,7 @@ public:
 struct NewAiAction{
 
     void Try_TheArmy_toTargetArea_alongOptimalRoute(int startAreaID, CArmy *theArmy, std::stack<int>& OptimalRoute);
-    int Get_areaID_existNearestArmy(int startAreaID, std::vector<NewArmyDef::servicesType>* list_servicesType_toBePrioritySearch, int maxRingCount_toPrioritySearch);
+    int Get_areaID_existNearestArmy(int startAreaID, std::vector<CountryArmyDef::servicesType>* list_servicesType_toBePrioritySearch, int maxRingCount_toPrioritySearch);
     int Get_consume_aboutTheline(std::vector<int>& list_line, CArmy* army_preparing);
     int Get_areaID_ofHighestValueWeakTargetAround(std::vector<int>& list_area_existEnemy_inRange);
     int Get_areaID_ofNearestEnemy(int startAreaID, int maxRingCount);
@@ -314,7 +314,7 @@ struct CArea {
     int OilGrowthRate;
 #ifdef __cplusplus
 
-bool Is_existTheServicesType(std::vector< NewArmyDef::servicesType>&  list_armyType);
+bool Is_existTheServicesType(std::vector< CountryArmyDef::servicesType>&  list_armyType);
     int Get_valueMilitary(int ringNumber);
     bool Exist_eliteArmy();
     bool Retreat_missileArmy(CArmy* needCheckArmy);
@@ -324,7 +324,7 @@ bool Is_existTheServicesType(std::vector< NewArmyDef::servicesType>&  list_armyT
     void Set_SafeOfArea(int ringCount, int enemyCount);
     void MoveArmyTo(CArea *targetArea, CArmy *actArmy, bool bottom);
     void Init(int ID, const AreaInfo &);
-    void AdjustAIArmySort();
+    void Adjust_armyOrder();
     bool Is_supplyPort();
     void SetAllArmyPoisoning(int state);
     void SaveAera(SaveAreaInfo *);
@@ -342,7 +342,7 @@ bool Is_existTheServicesType(std::vector< NewArmyDef::servicesType>&  list_armyT
     int Get_consumedMovement(CArmy* army);
     void Recover_armyState();
     //得到这个地块师级单位的总量
-    int Get_count_desigantions();
+    int Get_countOfDesigantions();
     //撤退到某个地块
     void Retreat_frontArmy_toAdjacentArea(CArea* adjacentArea);
     std::vector<int>* Get_areas_existEnemy_inRange(int armyIndex);

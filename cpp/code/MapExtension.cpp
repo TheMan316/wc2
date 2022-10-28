@@ -120,106 +120,106 @@ void CBackground::Render(CCamera *camera) {
 //Can_triggere_armyMoveToEvent zone image
 //Check zone image 新的地图图片读取机制
 void CScene::InitAreaImage(int MapID) {
-    //新地图读取方式
-    char FileName[32];
-    ZoneImage = new ecImage *[AreaCount];
-    for (auto &Area :g_Scene.AreaList) {
-        sprintf(FileName, "map/%04d.png", Area->ID);
-        ecTexture *Texture = ecGraphics::Instance()->LoadTexture(FileName);
-        ZoneImage[Area->ID] = new ecImage();
-        ZoneImage[Area->ID]->Init(Texture, 0, 0, AreasData[Area->ID].AreaSize[0], AreasData[Area->ID].AreaSize[1]);
-        ZoneImage[Area->ID]->SetColor(0xFFFFFFFF, -1);
-    }
-
-//    //旧地图读取方式
+//    //新地图读取方式
 //    char FileName[32];
-//    float CurPos[2] = {0.0, 0.0}, xDir = 1000.0;
-//    float MapSize[2];
-//    MapSize[0] = this->AreaMark.Size[0] * 8.0;
-//    MapSize[1] = this->AreaMark.Size[1] * 8.0;
-//    int ZoneCount = (((int) MapSize[0] - 1) / 1000 + 1) * (((int) MapSize[1] - 1) / 1000 + 1);
-//    int AreaCount = *this;
-//    bool *ZoneLoaded = new bool[ZoneCount];
-//    int i, LoadCount = 0;
-//    for (i = 0; i < ZoneCount; i++) {
-//        if (CurPos[0] < (this->TopLeftPos[0] + this->Size[0])
-//            && CurPos[1] < (this->TopLeftPos[1] + this->Size[1])
-//            && (CurPos[0] + 1000.0) >= this->TopLeftPos[0]
-//            && (CurPos[1] + 1000.0) >= this->TopLeftPos[1]) {
-//            if (g_contenscalefactor == 1.0) {
-//                sprintf(FileName, "m%d_zone%d.xml", MapID, i + 1);
-//                if (this->AreaTextureRes.LoadRes(FileName, false))
-//                    LoadCount += 1;
-//            } else if (g_contenscalefactor == 2.0) {
-//                sprintf(FileName, "m%d_zone%d_1.xml", MapID, i + 1);
-//                if (this->AreaTextureRes.LoadRes(FileName, false))
-//                    LoadCount += 1;
-//                sprintf(FileName, "m%d_zone%d_2.xml", MapID, i + 1);
-//                if (this->AreaTextureRes.LoadRes(FileName, false))
-//                    LoadCount += 1;
-//            }
-//            ZoneLoaded[i] = true;
-//        } else
-//            ZoneLoaded[i] = false;
-//        CurPos[0] += xDir;
-//        if (CurPos[0] >= MapSize[0]) {
-//            CurPos[0] -= 1000.0;
-//            CurPos[1] += 1000.0;
-//            xDir = -1000.0;
-//        } else if (CurPos[0] < 0.0) {
-//            CurPos[0] += 1000.0;
-//            CurPos[1] += 1000.0;
-//            xDir = 1000.0;
-//        }
+//    ZoneImage = new ecImage *[AreaCount];
+//    for (auto &Area :g_Scene.AreaList) {
+//        sprintf(FileName, "map/%04d.png", Area->ID);
+//        ecTexture *Texture = ecGraphics::Instance()->LoadTexture(FileName);
+//        ZoneImage[Area->ID] = new ecImage();
+//        ZoneImage[Area->ID]->Init(Texture, 0, 0, AreasData[Area->ID].AreaSize[0], AreasData[Area->ID].AreaSize[1]);
+//        ZoneImage[Area->ID]->SetColor(0xFFFFFFFF, -1);
 //    }
-//    printf("load num zone = %d\n", LoadCount);
-//    this->ZoneImage = new ecImage *[AreaCount];
-//    for (i = 0; i < AreaCount; i++) {
-//        sprintf(FileName, "%04d.png", i);
-//        ecImageAttr *p = this->AreaTextureRes.GetImage(FileName);
-//        if (p != NULL) {
-//            this->ZoneImage[i] = new ecImage;
-//            _ZN7ecImageC1EP11ecImageAttr(this->ZoneImage[i], p);
-//            this->ZoneImage[i]->SetColor(0xFFFFFFFF, -1);
-//        } else
-//            this->ZoneImage[i] = NULL;
-//    }
-//    //Validation
-//    for (i = 0; i < AreaCount; i++) {
-//        if (g_Scene[i]->Enable && this->ZoneImage[i] == NULL) {
-//            //Retry failed load
-//            for (i = 0; i < ZoneCount; i++) {
-//                if (!ZoneLoaded[i]) {
-//                    if (g_contenscalefactor == 1.0) {
-//                        sprintf(FileName, "m%d_zone%d.xml", MapID, i + 1);
-//                        if (this->AreaTextureRes.LoadRes(FileName, false))
-//                            LoadCount += 1;
-//                    } else if (g_contenscalefactor == 2.0) {
-//                        sprintf(FileName, "m%d_zone%d_1.xml", MapID, i + 1);
-//                        if (this->AreaTextureRes.LoadRes(FileName, false))
-//                            LoadCount += 1;
-//                        sprintf(FileName, "m%d_zone%d_2.xml", MapID, i + 1);
-//                        if (this->AreaTextureRes.LoadRes(FileName, false))
-//                            LoadCount += 1;
-//                    }
-//                }
-//            }
-//            for (i = 0; i < AreaCount; i++) {
-//                if (this->ZoneImage[i] == NULL) {
-//                    sprintf(FileName, "%04d.png", i);
-//                    ecImageAttr *p = this->AreaTextureRes.GetImage(FileName);
-//                    if (p != NULL) {
-//                        this->ZoneImage[i] = new ecImage;
-//                        _ZN7ecImageC1EP11ecImageAttr(this->ZoneImage[i], p);
-//                        this->ZoneImage[i]->SetColor(0xFFFFFFFF, -1);
-//                    } else
-//                        this->ZoneImage[i] = NULL;
-//                }
-//            }
-//            break;
-//        }
-//    }
-//    delete ZoneLoaded;
+
+    //旧地图读取方式
+    char FileName[32];
+    float CurPos[2] = {0.0, 0.0}, xDir = 1000.0;
+    float MapSize[2];
+    MapSize[0] = this->AreaMark.Size[0] * 8.0;
+    MapSize[1] = this->AreaMark.Size[1] * 8.0;
+    int ZoneCount = (((int) MapSize[0] - 1) / 1000 + 1) * (((int) MapSize[1] - 1) / 1000 + 1);
+    int AreaCount = *this;
+    bool *ZoneLoaded = new bool[ZoneCount];
+    int i, LoadCount = 0;
+    for (i = 0; i < ZoneCount; i++) {
+        if (CurPos[0] < (this->TopLeftPos[0] + this->Size[0])
+            && CurPos[1] < (this->TopLeftPos[1] + this->Size[1])
+            && (CurPos[0] + 1000.0) >= this->TopLeftPos[0]
+            && (CurPos[1] + 1000.0) >= this->TopLeftPos[1]) {
+            if (g_contenscalefactor == 1.0) {
+                sprintf(FileName, "m%d_zone%d.xml", MapID, i + 1);
+                if (this->AreaTextureRes.LoadRes(FileName, false))
+                    LoadCount += 1;
+            } else if (g_contenscalefactor == 2.0) {
+                sprintf(FileName, "m%d_zone%d_1.xml", MapID, i + 1);
+                if (this->AreaTextureRes.LoadRes(FileName, false))
+                    LoadCount += 1;
+                sprintf(FileName, "m%d_zone%d_2.xml", MapID, i + 1);
+                if (this->AreaTextureRes.LoadRes(FileName, false))
+                    LoadCount += 1;
+            }
+            ZoneLoaded[i] = true;
+        } else
+            ZoneLoaded[i] = false;
+        CurPos[0] += xDir;
+        if (CurPos[0] >= MapSize[0]) {
+            CurPos[0] -= 1000.0;
+            CurPos[1] += 1000.0;
+            xDir = -1000.0;
+        } else if (CurPos[0] < 0.0) {
+            CurPos[0] += 1000.0;
+            CurPos[1] += 1000.0;
+            xDir = 1000.0;
+        }
+    }
+    printf("load num zone = %d\n", LoadCount);
+    this->ZoneImage = new ecImage *[AreaCount];
+    for (i = 0; i < AreaCount; i++) {
+        sprintf(FileName, "%04d.png", i);
+        ecImageAttr *p = this->AreaTextureRes.GetImage(FileName);
+        if (p != NULL) {
+            this->ZoneImage[i] = new ecImage;
+            _ZN7ecImageC1EP11ecImageAttr(this->ZoneImage[i], p);
+            this->ZoneImage[i]->SetColor(0xFFFFFFFF, -1);
+        } else
+            this->ZoneImage[i] = NULL;
+    }
+    //Validation
+    for (i = 0; i < AreaCount; i++) {
+        if (g_Scene[i]->Enable && this->ZoneImage[i] == NULL) {
+            //Retry failed load
+            for (i = 0; i < ZoneCount; i++) {
+                if (!ZoneLoaded[i]) {
+                    if (g_contenscalefactor == 1.0) {
+                        sprintf(FileName, "m%d_zone%d.xml", MapID, i + 1);
+                        if (this->AreaTextureRes.LoadRes(FileName, false))
+                            LoadCount += 1;
+                    } else if (g_contenscalefactor == 2.0) {
+                        sprintf(FileName, "m%d_zone%d_1.xml", MapID, i + 1);
+                        if (this->AreaTextureRes.LoadRes(FileName, false))
+                            LoadCount += 1;
+                        sprintf(FileName, "m%d_zone%d_2.xml", MapID, i + 1);
+                        if (this->AreaTextureRes.LoadRes(FileName, false))
+                            LoadCount += 1;
+                    }
+                }
+            }
+            for (i = 0; i < AreaCount; i++) {
+                if (this->ZoneImage[i] == NULL) {
+                    sprintf(FileName, "%04d.png", i);
+                    ecImageAttr *p = this->AreaTextureRes.GetImage(FileName);
+                    if (p != NULL) {
+                        this->ZoneImage[i] = new ecImage;
+                        _ZN7ecImageC1EP11ecImageAttr(this->ZoneImage[i], p);
+                        this->ZoneImage[i]->SetColor(0xFFFFFFFF, -1);
+                    } else
+                        this->ZoneImage[i] = NULL;
+                }
+            }
+            break;
+        }
+    }
+    delete[] ZoneLoaded;
 }
 
 //Extend area count
@@ -265,6 +265,8 @@ int CActionAssist::searchNodeByID(int startAreaID, int ArmyIndex) {
         //如果是装甲单位，可能是走不到大城市 让他们找最近的敌军地块试试能不能过去
         if (theArmy->Is_tank() || theArmy->Is_panzer()) {
             targetAreaid  = g_newAiAction.Get_areaID_ofNearestEnemy(startAreaID, 15);
+            if (targetAreaid == -1)
+                return -1;
             shortestPath =  g_areaSurroundingInfoManager.Get_shortestPath(pathPyth, startAreaID, targetAreaid, ArmyIndex);
         }
         else {

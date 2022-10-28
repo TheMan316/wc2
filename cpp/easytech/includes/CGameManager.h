@@ -228,8 +228,8 @@ struct CCountry {
     std::vector<EventResolution*> List_resolution;
     int SpecialMark; //某某事触发时可用来赋值已进行后续其它相关事件的互动
     int OilConversionRate; //石油转化率
-    int New_Card_CDRound_Current[128];
-    int New_Card_CDRound_Each[128];
+    int Arr_cardCD_inTheTurn[128];
+    int Arr_cardCD_inSetting[128];
     short PolicyType_military;//AI军事行动的策略类型
     short PolicyType_economy; //AI经济行动的策略类型
     bool IsNewActionOver; //TODO 新ai逻辑结束了吗(未完成）
@@ -795,9 +795,9 @@ struct SaveCountryInfo {
     int OilConversionRate;
     int New_Card_CDRound_Current[128];
     int New_Card_CDRound_Each[128];
-    bool arrEventFinished_EventTurnBegin[512];
-    bool arrEventFinished_EventOccupyArea[512];
-    bool arrEventFinished_EventResolution[512];
+    bool arr_eventFinished_turnBegin[512];
+    bool arr_eventFinished_moveArmyTo[512];
+    bool arr_eventFinished_resolution[512];
     short PolicyType_military;//AI军事行动的策略类型
     short PolicyType_economy; //AI经济行动的策略类型
     bool IsNewActionOver;

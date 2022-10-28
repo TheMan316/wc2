@@ -114,10 +114,10 @@ CommonEvent::Creat_newCountry(const char* ID, const char* name, int money, int i
     //初始化卡牌回合
     int cardSize = NewCardDef.size();
     for (int j = 0; j < cardSize; ++j) {
-        country->New_Card_CDRound_Each[j] = NewCardDef[j]->Round;
+        country->Arr_cardCD_inSetting[j] = NewCardDef[j]->Round;
     }
     for (int j = 0; j < cardSize; ++j) {
-        country->New_Card_CDRound_Current[j] = country->New_Card_CDRound_Each[j];
+        country->Arr_cardCD_inTheTurn[j] = country->Arr_cardCD_inSetting[j];
     }
     //下一个单位的番号
     country->MaxArmyDesignationsLand = 1;

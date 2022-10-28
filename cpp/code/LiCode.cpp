@@ -21,13 +21,12 @@
 #include <GUI/GUIElement.h>
 #include <CGameManager.h>
 #include <stack>
-
 #include "CWarGas.h"
 
 static bool s_NewArmyAttribute = false; //装甲硬度和穿甲值的开关
 static bool s_Autoconstruction_byGrowthRate = true;
 static bool s_OpenWarFog = true;
-bool g_AllowSpectatorMode = true;
+bool g_AllowSpectatorMode = false;
 bool g_ShowArmysInfoOfEachArea = false;
 #define NewArmyStartID 28
 AreaSurroundingInfoManager g_areaSurroundingInfoManager;
@@ -40,18 +39,18 @@ static int s_ArrCardType[5][128] = {{0,  1,  2,  3,  4,  5},
                                     {10, 11, 12, 13},
                                     {14, 15, 16, 17, 18, 19, 20},
                                     {21, 22, 23, 24, 25, 26, 27}};
-static const int s_Count_theMapAreas = 1926;
+static const int s_Count_theMapAreas = 1949;
 
 
 static bool sArr_foundArea[s_Count_theMapAreas]; //用来记录某某地块是否已经被遍历过  它有一个初始化函数
 
 //新兵种新卡牌容器
-static std::vector<NewArmyDef *> s_ListNewArmyDef;  //在Add_newArmyDef_toList 中为其添加元素
+static std::vector<CountryArmyDef *> s_ListCountryArmydef;  //在Add_newArmyDef_toList 中为其添加元素
 std::vector<CardDef *> NewCardDef; //在LoadCardDef中初始化  有几张卡就有几个元素
 static std::vector<int *> s_ListNewCardIndex; //按顺序存放每个类别各个卡牌的下标
 ////卡牌冷却时间：仅对玩家有效
-//static std::vector<int> New_Card_CDRound_Current;
-//static std::vector<int> New_Card_CDRound_Each;
+//static std::vector<int> Arr_cardCD_inTheTurn;
+//static std::vector<int> Arr_cardCD_inSetting;
 
 static float arrUnitDrawnOffset[]= {10.0f,13.0f,15.0f,17.0f,10.0f,13.0f,15.0f,17.0f,10.0f,13.0f,15.0f,17.0f,10.0f,13.0f,15.0f,17.0f}; //16
 //
@@ -221,8 +220,8 @@ void CCountry::TurnEnd() {
         }
     }
     for (int i = 0; i < 128; ++i) {
-        if (this->New_Card_CDRound_Current[i] > 0) {
-            this->New_Card_CDRound_Current[i]--;
+        if (this->Arr_cardCD_inTheTurn[i] > 0) {
+            this->Arr_cardCD_inTheTurn[i]--;
         }
     }
 
@@ -565,7 +564,7 @@ int CArea::GetCityLevel() {
     else if (this->Type == normal_city) {
         cityLevel = 1;
     }
-    if (this->ConstructionType == city&&cityLevel < this->ConstructionLevel) {
+    if (this->ConstructionType == city && cityLevel < this->ConstructionLevel) {
         return this->ConstructionLevel;
     }
     else {
@@ -676,8 +675,8 @@ void InitArrArmyDesignations(CCountry *country) {
 
 void SetArmyDesignationLand(CArmy *army, CCountry *country) {
     //如果超过最大限制
-    if (country->MaxArmyDesignationsLand == 2028) {
-        for (int i = 0; i < 2028; ++i) {
+    if (country->MaxArmyDesignationsLand == 2048) {
+        for (int i = 0; i < 2048; ++i) {
             country->ListDesignationsLand[i] = false;
         }
         country->MaxArmyDesignationsLand = 1;
@@ -877,7 +876,7 @@ bool CArmy::Is_radiudAttack(){
     return false;
 }
 
-int CArmy::Get_count_card(){
+int CArmy::Get_countOfCard(){
     int count = 0;
     for (int i = 0; i < 11; ++i) {
         if (((this->Cards >> i) & 1) != 0)
@@ -933,11 +932,11 @@ void CArmy::Upgrade(){
     }
 }
 
-void CArmy::LostCard(int percentNum){
+void CArmy::Lost_card(int percentNum){
     int r = GetRand(this) % 100 + 1;
     //20概率移除 其中一个战术卡
     if (r  <= percentNum){
-        int cardCount = this->Get_count_card();
+        int cardCount = this->Get_countOfCard();
         if (cardCount >= 1){
             //随机到需要移除的的卡牌下标
             int r_cardIndex = GetRand(this) % cardCount ;
@@ -1307,10 +1306,6 @@ int CCountry::GetCardIndustry(CardDef *card) {
     if (card->ID == ResearchCard) {
         return industry * this->Tech;
     }
-        //禁 人为解包修改价格
-    else if (card->ID == IndustryCard||card->ID == CityCard) {
-        return 9999;
-    }
     else {
         return industry;
     }
@@ -1319,10 +1314,8 @@ int CCountry::GetCardIndustry(CardDef *card) {
 //得到卡牌价格
 int CCountry::GetCardPrice(CardDef *card) {
     int money = card->Price;
-    if (card->ID == ResearchCard) {
-        return money * this->Tech;
-    }
-    else if (card->ID == CommanderCard) {
+
+     if (card->ID == CommanderCard) {
         return (money += 5 * this->GetCommanderLevel());
     }
 
@@ -1487,7 +1480,7 @@ int CCountry::GetIndustrys() {
 void CArea::TurnEnd() {
     this->Recover_armyState();
     if (g_GameManager.IsIntelligentAI &&( this->Country->AI || g_GameManager.Is_spectetorMode())) {
-        this->AdjustAIArmySort();
+        this->Adjust_armyOrder();
     }
     if (s_Autoconstruction_byGrowthRate)
       Auto_construction(this);
@@ -2110,9 +2103,9 @@ void CArea::RemoveArmy(CArmy *army) {
      * 【创建人】： 李德邻 <p>
      * 【修改人】： ？？？<p>
      * 【创建时间】： ？？？ <p>
-     * 【修改时间】： 2022/8/7
+     * 【修改时间】： 2022/10/22
      */
-void  CArea::AdjustAIArmySort() {
+void  CArea::Adjust_armyOrder() {
     if (this->ArmyCount < 2)
         return;
     std::vector<int> list_armyValue;
@@ -2125,8 +2118,8 @@ void  CArea::AdjustAIArmySort() {
     for (int i = 0; i < list_armyValue.size()-1; ++i) {
         int index_minValue = i;
         //找到这个下标后面 最大值的下标
-        for (int j = 0; j < list_armyValue.size(); ++j) {
-            if (list_armyValue[i] > list_armyValue[j])
+        for (int j = i+1; j < list_armyValue.size(); ++j) {
+            if (list_armyValue[j] < list_armyValue[index_minValue])
                 index_minValue = j;
         }
         //如果后面的数中，最大的是自己则不用交换
@@ -2245,7 +2238,7 @@ def_easytech(_ZN5CArea9TurnBeginEv);
      * 【修改时间】： ？？？
      */
 void CArea::TurnBegin() {
-    AI_Uses_NewCard(this);
+//    AI_Uses_NewCard(this);
     for (int i = 0; i < this->ArmyCount; ++i) {
         CArmy* foundArmy = this->Army[i];
         foundArmy->TurnBegin();
@@ -2610,8 +2603,7 @@ AreaSurroundingInfoManager::Get_extraDistance_basisOfPathType(CCountry* theCount
             //要下水，当然要准备好船
             if(targetArea->Sea && army->IsNavy() == false && army->HasCard(CArmy::EngineeringCorps) == false  ){
                 auto ecrCard = CObjectDef::Instance()->GetCardDef(CARD_ID::ECRCard);
-                //降低ai对运输船的造价  70%概率
-                if (theCountry->Money < ecrCard->Price / 2 ||theCountry->Industry < ecrCard->Industry / 2) {
+                if (theCountry->Money > ecrCard->Price / 2 ||theCountry->Industry > ecrCard->Industry / 2) {
                     int r = g_GameManager.GetRand() % 100 + 1;
                     if (r <= 70)
                         result = 0;
@@ -2640,8 +2632,7 @@ AreaSurroundingInfoManager::Get_extraDistance_basisOfPathType(CCountry* theCount
             //要下水，当然要准备好船
             if(targetArea->Sea && army->IsNavy() == false && army->HasCard(CArmy::EngineeringCorps) == false  ){
                 auto ecrCard = CObjectDef::Instance()->GetCardDef(CARD_ID::ECRCard);
-                //降低ai对运输船的造价  70%概率
-                if (theCountry->Money < ecrCard->Price / 2 ||theCountry->Industry < ecrCard->Industry / 2) {
+                if (theCountry->Money > ecrCard->Price / 2 ||theCountry->Industry> ecrCard->Industry / 2) {
                     int r = g_GameManager.GetRand() % 100 + 1;
                     if (r <= 70)
                         result = 0;
@@ -2661,8 +2652,7 @@ AreaSurroundingInfoManager::Get_extraDistance_basisOfPathType(CCountry* theCount
             //要下水，当然要准备好船
             if(targetArea->Sea && army->IsNavy() == false && army->HasCard(CArmy::EngineeringCorps) == false  ){
                 auto ecrCard = CObjectDef::Instance()->GetCardDef(CARD_ID::ECRCard);
-                //降低ai对运输船的造价  70%概率
-                if (theCountry->Money < ecrCard->Price / 2 ||theCountry->Industry < ecrCard->Industry / 2) {
+                if (theCountry->Money > ecrCard->Price / 2 ||theCountry->Industry > ecrCard->Industry / 2) {
                     int r = g_GameManager.GetRand() % 100 + 1;
                     if (r <= 70)
                         result = 0;
@@ -2896,19 +2886,16 @@ int Get_attackValue_formStartArmyAttackTargetArmy(CFight *fight, CArmy *startArm
     //初始化开始军队的骰子
     for (int i = 0; i < dices; ++i) {
         int targetArmor = targetArmy->BasicAbilities->Armor;
+        attackValue_byDice = GetRand(startArmy) % (maxAttack - minAttack + 1);
+        attackValue_byDice += minAttack;
         //如果敌军的装甲度大于0,获取装甲攻击
         if (s_NewArmyAttribute && targetArmor > 0) {
-            attackValue_byDice = GetRand(startArmy) % (maxPiercing - minPiercing + 1);
-            attackValue_byDice += minPiercing;
+            int piercing = GetRand(startArmy) % (maxPiercing - minPiercing + 1);
+            piercing += minPiercing;
             //如果未能击穿对方的装甲 攻击值下降50%
-            if (attackValue_byDice <= targetArmor) {
+            if (piercing <= targetArmor) {
                 attackValue_byDice /= 2;
             }
-        }
-            //普通攻击
-        else {
-            attackValue_byDice = GetRand(startArmy) % (maxAttack - minAttack + 1);
-            attackValue_byDice += minAttack;
         }
         if (isStart) {
             fight->StartArmyDices.push_back(attackValue_byDice);
@@ -2958,7 +2945,7 @@ void CFight::NormalAttack(int StartAreaID, int TargetAreaID) {
     this->TargetArmyExtraAttack = 0;
     this->StartArmyExtraPiercing = 0;
     this->TargetArmyExtraPiercing = 0;
-    // 下面为攻击双方设置攻防点数 包括根据战术卡添加上述的Extra值。
+    // 下面为攻击双方设置攻防点数 包括根据战术卡和上述的Extra值。
     Set_armyBuff(this, startArmy, startArea, true);
     Set_armyBuff(this, targetArmy, targetArea, false);
     //打出的伤害（还未减掉防御力）
@@ -2986,34 +2973,36 @@ void CFight::NormalAttack(int StartAreaID, int TargetAreaID) {
         if (Is_dodged(targetArmy, startArmy)) {
             attackValue_fromTargetArmy = 0;
         }
-        int blow_startArmy = Get_blow(startArmy, dices_startArmy);
-        int blow_targetArmy = Get_blow(targetArmy, dices_targetArmy);
+        int blow_ofStartArmy = Get_blow(startArmy, dices_startArmy);
+        int blow_ofTargetArmy = Get_blow(targetArmy, dices_targetArmy);
         //如果打出的伤害小于5，对方不会受到组织度伤害
         if (attackValue_fromStartArmy < 5) {
-            blow_startArmy = 0;
+            blow_ofStartArmy = 0;
         }
         if (attackValue_fromTargetArmy < 5) {
-            blow_targetArmy = 0;
+            blow_ofTargetArmy = 0;
         }
         //如果其中一方处于溃败状态 ，双方打出的伤害下降50%
         if (startArmy->Is_collapsed()|| targetArmy->Is_collapsed()) {
             attackValue_fromStartArmy /= 2;
             attackValue_fromTargetArmy /= 2;
+            blow_ofTargetArmy /=2;
+            blow_ofStartArmy/=2;
         }
         //如果完全没有能力击穿对方的装甲硬度，造成的组织度损失减少50%
         if (Can_breakTargetArmor(startArmy,targetArmy) == false) {
-            blow_startArmy /= 2;
+            blow_ofStartArmy /= 2;
         }
         if (Can_breakTargetArmor(targetArmy,startArmy) == false) {
-            blow_targetArmy /= 2;
+            blow_ofTargetArmy /= 2;
         }
         //如果装甲硬度相差大于等于2倍。则高装甲度单位对低装甲度单位的进攻造成额外的1.4倍组织度伤害。
         if (startArmy->BasicAbilities->Armor >= targetArmy->BasicAbilities->Armor * 2) {
-            blow_startArmy *= 1.4;
+            blow_ofStartArmy *= 1.4;
         }
         //组织度结算
-        startArmy->Organization -= blow_targetArmy;
-        targetArmy->Organization -= blow_startArmy;
+        startArmy->Organization -= blow_ofTargetArmy;
+        targetArmy->Organization -= blow_ofStartArmy;
         if (startArmy->Organization < 0) {
             startArmy->Organization = 0;
         }
@@ -3089,8 +3078,9 @@ void SetCounter(CFight *fight, ArmyDef::ArmyType &startArmy_ID, ArmyDef::ArmyTyp
                 fight->CanCounter = true;
             }
         }
-        else if (targetArmy->Is_artillery())
+        else if (targetArmy->Is_artillery()){
             fight->CanCounter = true;
+        }
         else if ( targetArmy->IsNavy()) {
             fight->CanCounter = true;
         }
@@ -3098,7 +3088,9 @@ void SetCounter(CFight *fight, ArmyDef::ArmyType &startArmy_ID, ArmyDef::ArmyTyp
         else if (targetArea->InstallationType == CArea::fort) {
             fight->CanCounter = true;
         }
-        fight->CanCounter = false;
+        else{
+            fight->CanCounter = false;
+        }
     }
         //如果进攻者是潜艇
     else if (startArmy_ID == ArmyDef::Submarine) {
@@ -3176,8 +3168,9 @@ Set_effect_byAreaType(CArea *targetArea, ArmyDef::ArmyType &targetArmy_ID, int &
         }
     }
 }
+
 bool Can_breakTargetArmor(CArmy* startArmy,CArmy* targetArmy){
-    return (startArmy->BasicAbilities->MinPiercing >= targetArmy->BasicAbilities->Armor);
+    return (startArmy->BasicAbilities->MaxPiercing > targetArmy->BasicAbilities->Armor);
 }
 void Increase_damage_accordingToRestraintRelationship(CArmy *startArmy, CArmy *targetArmy, int &targetAttackTotal,
                                                       int &startAttackTotal) {
@@ -3248,14 +3241,14 @@ void CFight::ApplyResult() {
             //进攻方未死亡
         else {
             if (startDices <= 3) {
-                startArmy->LostCard(10);
+                startArmy->Lost_card(10);
             }
             //进攻方增加经验（经验为目标军队受到的实际伤害）
             startArmy->AddExp(this->TargetArmyReceiveDamage);
             //如果防御方未死亡
             if (isLost_TargetArmy == false) {
                 if (targetDices <= 3) {
-                    targetArmy->LostCard(20);
+                    targetArmy->Lost_card(20);
                 }
                 //增加经验
                 targetArmy->AddExp(this->StartArmyReceiveDamage);
@@ -3301,6 +3294,7 @@ void CFight::ApplyResult() {
                     if (startArmy->Is_tank())
                         startArmy->Movement -= 1;
                     startArea->OccupyArea(targetArea);
+                    targetArea->ReduceConstructionLevel();
                 }
                 r = GetRand() % 100;
                 //30%的概率进攻方出现士气上涨
@@ -3587,7 +3581,7 @@ void CArea::ReduceConstructionLevel() {
                     this->ConstructionLevel = 0;
                     this->ConstructionType = NoConstruction;
                 }
-                if (this->ConstructionType == industry &&this->ConstructionLevel == 2){
+                else  if (this->ConstructionType == industry &&this->ConstructionLevel == 2){
                     this->ConstructionLevel = 0;
                     this->ConstructionType = NoConstruction;
                 }
@@ -3596,7 +3590,7 @@ void CArea::ReduceConstructionLevel() {
                     this->ConstructionLevel = 0;
                     this->ConstructionType = NoConstruction;
                 }
-                if (this->ConstructionType == industry &&this->ConstructionLevel == 1){
+                else if (this->ConstructionType == industry &&this->ConstructionLevel == 1){
                     this->ConstructionLevel = 0;
                     this->ConstructionType = NoConstruction;
                 }
@@ -4185,18 +4179,13 @@ void CGameManager::LoadBattle(const char *FileName) {
                             if (country != nullptr)
                                 country->AddArea(AreaID);
                             ConstructionStr = AreaElement->Attribute("construction");
-                            ConstructionType =
-                                    ConstructionStr != nullptr ? (!strcmp(ConstructionStr, "city")
-                                                                  ? CArea::city : !strcmp(
-                                                    ConstructionStr, "industry") ? CArea::industry
-                                                                                 : !strcmp(
-                                                            ConstructionStr, "airport")
-                                                                                   ? CArea::airport
-                                                                                   : !strcmp(
-                                                                    ConstructionStr, "oilwell")
-                                                                                     ? CArea::oilwell
-                                                                                     : CArea::NoConstruction)
-                                                               : CArea::NoConstruction;
+                            ConstructionType = ConstructionStr != nullptr ?
+                                    (!strcmp(ConstructionStr, "city")? CArea::city :
+                                    !strcmp( ConstructionStr, "industry") ?CArea::industry:
+                                    !strcmp(ConstructionStr, "airport")?CArea::airport:
+                                    !strcmp(ConstructionStr, "oilwell")? CArea::oilwell:
+                                    CArea::NoConstruction)
+                                    : CArea::NoConstruction;
                             if (AreaElement->QueryIntAttribute("level", &ConstructionLevel) !=
                                 TIXML_SUCCESS)
                                 ConstructionLevel = 0;
@@ -4783,10 +4772,10 @@ void Init_countryCardRound() {
         CCountry *country = g_GameManager.ListCountry[i];
         int cardSize = NewCardDef.size();
         for (int j = 0; j < cardSize; ++j) {
-            country->New_Card_CDRound_Each[j] = NewCardDef[j]->Round;
+            country->Arr_cardCD_inSetting[j] = NewCardDef[j]->Round;
         }
         for (int j = 0; j < cardSize; ++j) {
-            country->New_Card_CDRound_Current[j] = country->New_Card_CDRound_Each[j];
+            country->Arr_cardCD_inTheTurn[j] = country->Arr_cardCD_inSetting[j];
         }
     }
 }
@@ -4801,7 +4790,7 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
         if (targetArea == nullptr)
             return;
         if (IsNewCard(Card->ID)) {
-            if (New_Card_CDRound_Current[Card->ID] == 0&&CheckCardTargetArea(Card, TargetAreaID)) {
+            if (Arr_cardCD_inTheTurn[Card->ID] == 0 && CheckCardTargetArea(Card, TargetAreaID)) {
                 if (Card->Type == CardDef::Army||Card->Type == CardDef::Navy) {
                     targetArea->DraftArmy(Card->ID);
                 }
@@ -4830,14 +4819,14 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
                     }
                 }
             }
-            New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+            Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
             Money -= CardPrice;
             Industry -= CardIndustry;
             return;
         }
         else if ((Card->Type == CardDef::Army||Card->Type == CardDef::Navy)&&
                  CheckCardTargetArea(Card, TargetAreaID)&&IsCardUnlock(Card)) {
-            if (New_Card_CDRound_Current[Card->ID] > 0)
+            if (Arr_cardCD_inTheTurn[Card->ID] > 0)
                 return;
             CArmy *Army = nullptr;
             switch (Card->ID) {
@@ -4934,38 +4923,38 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
             Industry -= CardIndustry;
             //重置卡牌冷却时间
 //                CardRound[Card->ID] = Card->Round;
-            New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+            Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
         }
-        else if (Card->Type == CardDef::Development&&CheckCardTargetArea(Card, TargetAreaID)&&
-                 New_Card_CDRound_Current[Card->ID] == 0) {
+        else if (Card->Type == CardDef::Development && CheckCardTargetArea(Card, TargetAreaID) &&
+                 Arr_cardCD_inTheTurn[Card->ID] == 0) {
             switch (Card->ID) {
                 case CityCard:
                     targetArea->Construct(CArea::city);
-                    New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                    Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                     break;
                 case IndustryCard:
                     targetArea->Construct(CArea::industry);
-                    New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                    Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                     break;
                 case AirportCard:
                     targetArea->Construct(CArea::airport);
-                    New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                    Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                     break;
                 case LandFortCard:
                     targetArea->InstallationType = CArea::fort;
-                    New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                    Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                     break;
                 case EntrenchmentCard:
                     targetArea->InstallationType = CArea::entrenchment;
-                    New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                    Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                     break;
                 case AntiaircraftCard:
                     targetArea->InstallationType = CArea::antiaircraft;
-                    New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                    Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                     break;
                 case RadarCard:
                     targetArea->InstallationType = CArea::radar;
-                    New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                    Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                     break;
                 default:
                     return;
@@ -5007,11 +4996,11 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
 
                 }
             }
-            else if (Card->ID == AceForcesCard&&New_Card_CDRound_Current[Card->ID] == 0&&
+            else if (Card->ID == AceForcesCard && Arr_cardCD_inTheTurn[Card->ID] == 0 &&
                      targetArea != NULL) {
                 targetArea->GetArmy(0)->Upgrade();
                 _ZN9CSoundRes10PlayCharSEE10SND_EFFECT(&g_SoundRes, CSoundRes::aLvup_wav);
-                New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                 Money -= CardPrice;
                 Industry -= CardIndustry;
             }
@@ -5020,13 +5009,13 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
                 for (int i = 0; i < targetArea->ArmyCount; i++)
                     targetArea->RevertArmyStrength(i);
                 _ZN9CSoundRes10PlayCharSEE10SND_EFFECT(&g_SoundRes, CSoundRes::aSupply_wav);
-                New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                 Money -= CardPrice;
                 Industry -= CardIndustry;
             }
-            else if ((Card->ID == AGRCard||Card->ID == LARCard||Card->ID == ECRCard)&&
-                     CheckCardTargetArmy(Card, TargetAreaID, ArmyIndex)&&
-                     New_Card_CDRound_Current[Card->ID] == 0) {
+            else if ((Card->ID == AGRCard||Card->ID == LARCard||Card->ID == ECRCard) &&
+                     CheckCardTargetArmy(Card, TargetAreaID, ArmyIndex) &&
+                     Arr_cardCD_inTheTurn[Card->ID] == 0) {
                 switch (Card->ID) {
                     case AGRCard:
                         targetArea->AddArmyCard(ArmyIndex, CArmy::AntitankGun);
@@ -5040,13 +5029,13 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
                     default:
                         return;
                 }
-                New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                 _ZN9CSoundRes10PlayCharSEE10SND_EFFECT(&g_SoundRes, CSoundRes::aBuff_wav);
                 Money -= CardPrice;
                 Industry -= CardIndustry;
             }
         }
-        else if (Card->Type == CardDef::AirForce&&New_Card_CDRound_Current[Card->ID] == 0) {
+        else if (Card->Type == CardDef::AirForce && Arr_cardCD_inTheTurn[Card->ID] == 0) {
             if (CheckCardTargetArea(Card, TargetAreaID)) {
                 if (Card->ID == AirborneForceCard) {
                     CCountry *TargetCountry = targetArea->Country;
@@ -5061,7 +5050,7 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
                     targetArea->DraftArmy(ArmyDef::InfantryD1905);
                 }
 //                CardRound[Card->ID] = GetWarMedalLevel(AirForceMedal) > 2 ? 0 : Card->Round;
-                New_Card_CDRound_Current[Card->ID] = New_Card_CDRound_Each[Card->ID];
+                Arr_cardCD_inTheTurn[Card->ID] = Arr_cardCD_inSetting[Card->ID];
                 Money -= CardPrice;
                 Industry -= CardIndustry;
             }
@@ -5161,13 +5150,13 @@ bool CCountry::CheckCardTargetArea(CardDef *Card, int AreaID) {
         }
     }
     else{
-//        if (Card->ID == InfantryCard){
-//            return area->ConstructionLevel > 2;
-//        }
-//        else{
+        if (Card->ID == InfantryCard){
+            return area->ConstructionLevel > 2;
+        }
+        else{
             return easytech(_ZN8CCountry19CheckCardTargetAreaEP7CardDefi)(this, Card, AreaID);
 
-//        }
+        }
 
     }
 
@@ -5185,7 +5174,7 @@ bool CCountry::CanBuyCard(CardDef *Card) {
         //或者这个是科技卡的同时 科技等级大于4或者科技冷却回合大于0
         ||((Card->ID == ResearchCard)&&((Tech > 4)||(TechTurn > 0)))
         //或者这个卡牌的冷却回合大于0
-        ||((New_Card_CDRound_Current[Card->ID] > 0)))
+        ||((Arr_cardCD_inTheTurn[Card->ID] > 0)))
         return false;
     return IsEnoughMoney(Card)&&IsEnoughIndustry(Card);
 }
@@ -5456,23 +5445,27 @@ void CObjectDef::LoadArmyDef() {
                                         0, 60, 35, 1, 8, 1, 0};
     Set_newArmyDef(LightTankD_1916);
 
-    auto *MidTankD_1916 = new ArmyDef{"MidTankD_1916", (ArmyDef::ArmyType) 5, 60, 2, 1, 6, 0, 0, 0,
+    auto *MidTankD_1916 = new ArmyDef{"MidTankD_1916", (ArmyDef::ArmyType) 5, 180, 2, 4, 10, 0, 0, 0,
                                       60, 35, 1, 4, 1, 0};
     Set_newArmyDef(MidTankD_1916);
 
-    auto *Destroyer = new ArmyDef{"Destroyer", (ArmyDef::ArmyType) 6, 60, 2, 1, 6, 0, 0, 0, 60, 35,
+    auto *Destroyer = new ArmyDef{"Destroyer", (ArmyDef::ArmyType) 6,
+                                  160, 1, 3, 9, 0, 0, 0, 60, 35,
                                   1, 4, 4, 0};
     Set_newArmyDef(Destroyer);
 
-    auto *Cruiser = new ArmyDef{"Cruiser", (ArmyDef::ArmyType) 7, 60, 2, 1, 6, 0, 0, 0, 60, 35, 1,
+    auto *Cruiser = new ArmyDef{"Cruiser", (ArmyDef::ArmyType) 7,
+                                240, 1, 3, 10, 0, 0, 0, 60, 35, 1,
                                 4, 4, 0};
     Set_newArmyDef(Cruiser);
 
-    auto *Battleship = new ArmyDef{"Battleship", (ArmyDef::ArmyType) 8, 60, 2, 1, 6, 0, 0, 0, 60,
+    auto *Battleship = new ArmyDef{"Battleship", (ArmyDef::ArmyType) 8,
+                                   320, 1, 4, 11, 0, 0, 0, 60,
                                    35, 1, 4, 4, 0};
     Set_newArmyDef(Battleship);
 
-    auto *AircraftCarrier = new ArmyDef{"AircraftCarrier", (ArmyDef::ArmyType) 9, 60, 2, 1, 6, 0, 0,
+    auto *AircraftCarrier = new ArmyDef{"AircraftCarrier", (ArmyDef::ArmyType) 9,
+                                        220, 1, 1, 7, 0, 0,
                                         0, 60, 35, 1, 4, 4, 0};
     Set_newArmyDef(AircraftCarrier);
 
@@ -5520,9 +5513,9 @@ void CObjectDef::LoadArmyDef() {
 }
 
 void InitListArmyDef() {
-    NewArmyDef *newArmyDef = new NewArmyDef();
+    CountryArmyDef *newArmyDef = new CountryArmyDef();
     strcpy(newArmyDef->CountryName, "other");
-    s_ListNewArmyDef.push_back(newArmyDef);
+    s_ListCountryArmydef.push_back(newArmyDef);
 }
 /**
      *=======================================================<p>
@@ -5540,49 +5533,51 @@ void InitListArmyDef() {
      * 【修改时间】：？？？
      */
 ArmyDef *Get_newArmyDef(int armyDefID, const char *CountryName) {
-    int size = s_ListNewArmyDef.size();
+    int size = s_ListCountryArmydef.size();
     for (int i = 0; i < size; ++i) {
-        if (strcmp(s_ListNewArmyDef[i]->CountryName, CountryName) == 0) {
+        if (strcmp(s_ListCountryArmydef[i]->CountryName, CountryName) == 0) {
             //如果找到了一定要有对应的armydef
-            if (s_ListNewArmyDef[i]->mapArmydef[armyDefID] != nullptr) {
-                return s_ListNewArmyDef[i]->mapArmydef[armyDefID];
-            }
+            if(s_ListCountryArmydef[i]->mapArmydef.count(armyDefID))
+                return s_ListCountryArmydef[i]->mapArmydef[armyDefID];
+            break;
         }
     }
     //如果找不到返回默认设置
-    return s_ListNewArmyDef[0]->mapArmydef[armyDefID];
+    return s_ListCountryArmydef[0]->mapArmydef[armyDefID];
 }
 
 void Add_newArmyDef_toList(ArmyDef *armydef, char *countryName) {
     if (strcmp(countryName, "other") == 0) {
         //设置到默认
-        s_ListNewArmyDef[0]->mapArmydef[armydef->ID] = armydef;
+        s_ListCountryArmydef[0]->mapArmydef[armydef->ID] = armydef;
         return;
     }
     //不是通用国家将执行下面这个代码
-    int size = s_ListNewArmyDef.size();
+    int size = s_ListCountryArmydef.size();
     for (int i = 0; i < size; ++i) {
         //如果这个国家存在
-        if (strcmp(s_ListNewArmyDef[i]->CountryName, countryName) == 0) {
+        if (strcmp(s_ListCountryArmydef[i]->CountryName, countryName) == 0) {
             //替换数据
-            s_ListNewArmyDef[i]->mapArmydef[armydef->ID] = armydef;
+            s_ListCountryArmydef[i]->mapArmydef[armydef->ID] = armydef;
             return;
         }
     }
     //执行到这里，则这个国家并未找到，创建它
-    NewArmyDef *newArmyDef = new NewArmyDef();
+    CountryArmyDef *newArmyDef = new CountryArmyDef();
+    strcpy(newArmyDef->CountryName,countryName);
     //先把通用国家的数据移植过来
-    for (int i = 0; i < s_ListNewArmyDef[0]->mapArmydef.size(); ++i) {
-        newArmyDef->mapArmydef[i] = s_ListNewArmyDef[0]->mapArmydef[i];
+    for (int i = 0; i < s_ListCountryArmydef[0]->mapArmydef.size(); ++i) {
+        newArmyDef->mapArmydef[i] = s_ListCountryArmydef[0]->mapArmydef[i];
     }
     //再把指定的军队数据替换进去
     newArmyDef->mapArmydef[armydef->ID] = armydef;
-    s_ListNewArmyDef.push_back(newArmyDef);
+    s_ListCountryArmydef.push_back(newArmyDef);
 
 }
 
 void ResetArmyDef(ArmyDef *armyDef, int extraHp, int extraMinAttack, int extraMaxAttack,
                   int extraMovement) {
+
     armyDef->Hp += extraHp;
     armyDef->MinAttack += extraMinAttack;
     armyDef->MaxAttack += extraMaxAttack;
@@ -5594,12 +5589,62 @@ void Set_newArmyDef(ArmyDef *armydef) {
 
     Add_newArmyDef_toList(armydef, "other");
     if (armydef->ID == ArmyDef::Submarine) {
-        ResetArmyDef(armydef, 20, 1, 1, 0);
-        Add_newArmyDef_toList(armydef, "de");
+        //通过拷贝构造函数快速赋值
+        ArmyDef *newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 20, 1, 1, 0);
     }
-    if (armydef->ID == ArmyDef::HeavyTank) {
-        ResetArmyDef(armydef, 20, 5, 5, 0);
-        Add_newArmyDef_toList(armydef, "de");
+    else if (armydef->ID == ArmyDef::HeavyTank) {
+        ArmyDef *newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 20, 1, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "de");
+        newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 30, 0, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "ru");
+    }
+    else if (armydef->ID == ArmyDef::Tank) {
+        ArmyDef *newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 10, 1, 0, 0);
+        Add_newArmyDef_toList(newArmydef, "de");
+        newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 30, 1, 0, 0);
+        Add_newArmyDef_toList(newArmydef, "ru");
+    }
+    else if (armydef->ID == ArmyDef::Panzer) {
+        ArmyDef *newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 10, 1, 0, 0);
+        Add_newArmyDef_toList(newArmydef, "de");
+        newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 10, 0, 0, 0);
+        Add_newArmyDef_toList(newArmydef, "ru");
+    }
+    else if (armydef->ID == ArmyDef::InfantryD1905) {
+        ArmyDef *newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 20, 0, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "ja");
+         newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 20, 0, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "cn");
+        newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 20, 0, 0, 0);
+        Add_newArmyDef_toList(newArmydef, "ru");
+    }
+    else if (armydef->ID == ArmyDef::Artillery || armydef->ID == ArmyDef::Rocket) {
+        ArmyDef *newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 0, 1, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "ru");
+        newArmydef = new ArmyDef(*armydef);
+        newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 0, 1, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "am");
+        newArmydef = new ArmyDef(*armydef);
+    }
+    else if (armydef->ID == ArmyDef::AircraftCarrier) {
+        ArmyDef *newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 0, 1, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "am");
+        newArmydef = new ArmyDef(*armydef);
+        ResetArmyDef(newArmydef, 0, 0, 1, 0);
+        Add_newArmyDef_toList(newArmydef, "gb");
     }
 }
 
@@ -5660,19 +5705,19 @@ void CObjectDef::LoadCardDef() {
     NewCardDef.push_back(Tank);
     auto *MediumTank = new CardDef{(string *) "MediumTank", (string *) "card_5.png",
                                    (string *) "MediumTank Intro", CARD_ID::MediumTankCard, CardDef::Army,
-                                   300,150, 0, 5};
+                                   300,150, 0, 3};
     NewCardDef.push_back(MediumTank);
     auto *Destroyer = new CardDef{(string *) "Destroyer", (string *) "card_6.png",
                                   (string *) "Destroyer Intro", (CARD_ID) DestroyerCard, CardDef::Navy,
-                                  300,150, 3, 4};
+                                  250,60, 3, 2};
     NewCardDef.push_back(Destroyer);
     auto *Cruiser = new CardDef{(string *) "Cruiser", (string *) "card_7.png",
                                 (string *) "Cruiser Intro", (CARD_ID) 7, CardDef::Navy,
-                                300, 150, 3,4};
+                                350, 100, 3,3};
     NewCardDef.push_back(Cruiser);
     auto *Battleship = new CardDef{(string *) "Battleship", (string *) "card_8.png",
                                    (string *) "Battleship Intro", (CARD_ID) 8, CardDef::Navy,
-                                   300, 150, 3, 4};
+                                   450, 150, 3, 3};
     NewCardDef.push_back(Battleship);
     auto *AircraftCarrier = new CardDef{(string *) "AircraftCarrier", (string *) "card_9.png",
                                         (string *) "AircraftCarrier Intro", (CARD_ID) 9,CardDef::Navy,
@@ -5697,15 +5742,15 @@ void CObjectDef::LoadCardDef() {
     NewCardDef.push_back(Nuclearbomb);
     auto *City = new CardDef{(string *) "City", (string *) "card_city.png",
                              (string *) "City Intro",(CARD_ID) 14, CardDef::Development,
-                             300, 150, 3, 4};
+                             60, 0, 3, 1};
     NewCardDef.push_back(City);
     auto *Industry = new CardDef{(string *) "Indusry", (string *) "card_industry.png",
                                  (string *) "Indusry Intro", (CARD_ID) 15, CardDef::Development,
-                                 300, 150, 3, 4};
+                                 50, 10, 3, 1};
     NewCardDef.push_back(Industry);
     auto *Airport = new CardDef{(string *) "Airport", (string *) "card_airport.png",
                                 (string *) "Airport Intro", (CARD_ID) 16, CardDef::Development,
-                                300,150, 3, 4};
+                                300,150, 3, 1};
     NewCardDef.push_back(Airport);
     auto *LandFort = new CardDef{(string *) "LandFort", (string *) "card_landfort.png",
                                  (string *) "LandFort Intro", (CARD_ID) 17, CardDef::Development,
@@ -5713,11 +5758,11 @@ void CObjectDef::LoadCardDef() {
     NewCardDef.push_back(LandFort);
     auto *Entrenchment = new CardDef{(string *) "Entrenchment", (string *) "card_entrenchment.png",
                                      (string *) "Entrenchment Intro", (CARD_ID) 18,CardDef::Development,
-                                     300, 150, 3, 4};
+                                     150, 0, 3, 1};
     NewCardDef.push_back(Entrenchment);
     auto *Antiaircraft = new CardDef{(string *) "Antiaircraft", (string *) "card_antiaircraft.png",
                                      (string *) "Antiaircraft Intro", (CARD_ID) 19, CardDef::Development,
-                                     300, 150, 3, 4};
+                                     300, 150, 3, 1};
     NewCardDef.push_back(Antiaircraft);
     auto *Radar = new CardDef{(string *) "Radar", (string *) "card_radar.png",
                               (string *) "Radar Intro", (CARD_ID) 20, CardDef::Development,
@@ -5736,7 +5781,7 @@ void CObjectDef::LoadCardDef() {
 
     auto *LARCard = new CardDef{(string *) "LARCard", (string *) "card_23.png",
                                 (string *) "LARCard Intro", (CARD_ID) 23, CardDef::Strategy,
-                                1,1, 0, 4};
+                                30,1, 0, 1};
     NewCardDef.push_back(LARCard);
     auto *ECRCard = new CardDef{(string *) "ECRCard", (string *) "card_24.png",
                                 (string *) "ECRCard Intro", (CARD_ID) 24, CardDef::Strategy
@@ -5744,16 +5789,17 @@ void CObjectDef::LoadCardDef() {
     NewCardDef.push_back(ECRCard);
     auto *Commander = new CardDef{(string *) "Commander", (string *) "card_commander.png",
                                   (string *) "Commander Intro", (CARD_ID) 25, CardDef::Strategy
-                                  , 40, 2, 3, 1};
+                                  , 40, 2, 3, 4};
     NewCardDef.push_back(Commander);
     auto *Supplyline = new CardDef{(string *) "Supplyline", (string *) "card_supplyline.png",
                                    (string *) "Supplyline Intro", (CARD_ID) 26, CardDef::Strategy
-                                   ,300, 150, 3, 4};
+                                   ,180, 80, 4, 1};
     NewCardDef.push_back(Supplyline);
     auto *Aceforce = new CardDef{(string *) "Aceforce", (string *) "card_aceforce.png",
                                  (string *) "Aceforce Intro", (CARD_ID) 27, CardDef::Strategy
-                                 , 300,150, 3, 4};
+                                 , 180,80, 3, 4};
     NewCardDef.push_back(Aceforce);
+
     // 添加新卡牌
     auto *HeavyTankCard = new CardDef{(string *) "MediumTankCard", (string *) "card_32.png",
                                       (string *) "MediumTankCard Intro", (CARD_ID) 28,CardDef::Army
@@ -5761,42 +5807,42 @@ void CObjectDef::LoadCardDef() {
     NewCardDef.push_back(HeavyTankCard);
     auto *BiochemicalForceCard = new CardDef{(string *) "BiochemicalForceCard",(string *) "card_29.png",
                                              (string *) "BiochemicalForceCard Intro", (CARD_ID) 29, CardDef::Army,
-                                             9, 30, 1, 3};
+                                             9, 30, 1, 4};
     NewCardDef.push_back(BiochemicalForceCard);
 
     auto *SubmarineCard = new CardDef{(string *) "SubmarineCard", (string *) "card_28.png",
                                       (string *) "SubmarineCard Intro", (CARD_ID) 30, CardDef::Navy
-                                      ,9, 30, 0, 3};
+                                      ,9, 30, 0, 4};
     NewCardDef.push_back(SubmarineCard);
-    //从此开始，往后的卡牌不可设置为陆军和海军类别
+    //从此开始
     auto *ExpendCard = new CardDef{(string *) "ExpendCard", (string *) "card_30.png",
                                    (string *) "ExpendCard Intro", (CARD_ID) 31, CardDef::Development
-                                   , 9, 30, 0, 3};
+                                   , 9, 30, 0, 4};
     NewCardDef.push_back(ExpendCard);
     auto *SplitCard = new CardDef{(string *) "SplitCard", (string *) "card_31.png",
                                   (string *) "SplitCard Intro", (CARD_ID) 32, CardDef::Development
-                                  ,9, 30, 0, 3};
+                                  ,9, 30, 0, 4};
     NewCardDef.push_back(SplitCard);
     auto *AirDefenseCard = new CardDef{(string *) "AirDefenseCard", (string *) "card_33.png",
                                        (string *) "AirDefenseCard Intro", (CARD_ID) 33,CardDef::AirForce
-                                       , 9, 30, 0, 3};
+                                       , 9, 30, 0, 4};
     NewCardDef.push_back(AirDefenseCard);
     auto *HARCard = new CardDef{(string *) "HARCard", (string *) "card_34.png",
                                 (string *) "HARCard Intro", (CARD_ID) 34, CardDef::Strategy
-                                , 9, 30,0, 3};
+                                , 9, 30,0, 4};
     NewCardDef.push_back(HARCard);
 
     auto *TDRCard = new CardDef{(string *) "TDRCard", (string *) "card_36.png",
                                 (string *) "TDRCard Intro", (CARD_ID) 35, CardDef::Strategy
-                                , 1,1, 0, 3};
+                                , 1,1, 0, 4};
     NewCardDef.push_back(TDRCard);
     auto *TTRCard = new CardDef{(string *) "TTRCard", (string *) "card_37.png",
                                 (string *) "TTRCard Intro", (CARD_ID) 36, CardDef::Strategy
-                                , 9, 30,0, 3};
+                                , 9, 30,0, 4};
     NewCardDef.push_back(TTRCard);
     auto *MARCard = new CardDef{(string *) "MARCard", (string *) "card_38.png",
                                 (string *) "MARCard Intro", (CARD_ID) 37, CardDef::Strategy
-                                , 9, 30,0, 3};
+                                , 9, 30,0, 4};
     NewCardDef.push_back(MARCard);
 
 
@@ -5874,7 +5920,7 @@ void GUIBuyCard::ResetCardState() {
         int *Enable = ((int *) GUI + 292 / 4);
         int *Tech = ((int *) GUI + 284 / 4);
         int *Round = ((int *) GUI + 70);
-        *Round = Country->New_Card_CDRound_Current[Card->ID];
+        *Round = Country->Arr_cardCD_inTheTurn[Card->ID];
         if (GUI != nullptr) {
             *Enable = 1;
             *Tech = 0;
@@ -6127,13 +6173,13 @@ void CGameManager::RealLoadGame(const char *FileName) {
             SaveCountryInfo *countryInfo = &CountriesInfo[j];
             CCountry *country = g_GameManager.ListCountry[j];
             for (int i = 0; i < countryInfo->eventOccupyAreasNum; ++i) {
-                country->List_event_moveArmyTo[i]->isFinished = countryInfo->arrEventFinished_EventOccupyArea[i];
+                country->List_event_moveArmyTo[i]->isFinished = countryInfo->arr_eventFinished_moveArmyTo[i];
             }
             for (int i = 0; i < countryInfo->eventTurnBeginsNum; ++i) {
-                country->List_event_turnBegin[i]->isFinished = countryInfo->arrEventFinished_EventTurnBegin[i];
+                country->List_event_turnBegin[i]->isFinished = countryInfo->arr_eventFinished_turnBegin[i];
             }
             for (int i = 0; i < countryInfo->eventResolutionsNum; ++i) {
-                country->List_resolution[i]->isFinished = countryInfo->arrEventFinished_EventResolution[i];
+                country->List_resolution[i]->isFinished = countryInfo->arr_eventFinished_resolution[i];
             }
         }
         int f = 0;
@@ -6230,18 +6276,18 @@ void CCountry::SaveCountry(SaveCountryInfo *countryInfo) {
     countryInfo->eventResolutionsNum = this->List_resolution.size();
     countryInfo->SpecificMark = this->SpecialMark;
     countryInfo->OilConversionRate = this->OilConversionRate;
-    memcpy(countryInfo->New_Card_CDRound_Current, New_Card_CDRound_Current,
-           sizeof(New_Card_CDRound_Current));
-    memcpy(countryInfo->New_Card_CDRound_Each, New_Card_CDRound_Each,
-           sizeof(New_Card_CDRound_Each));
+    memcpy(countryInfo->New_Card_CDRound_Current, Arr_cardCD_inTheTurn,
+           sizeof(Arr_cardCD_inTheTurn));
+    memcpy(countryInfo->New_Card_CDRound_Each, Arr_cardCD_inSetting,
+           sizeof(Arr_cardCD_inSetting));
     for (int i = 0; i < countryInfo->eventOccupyAreasNum; ++i) {
-        countryInfo->arrEventFinished_EventOccupyArea[i] = this->List_event_moveArmyTo[i]->isFinished;
+        countryInfo->arr_eventFinished_moveArmyTo[i] = this->List_event_moveArmyTo[i]->isFinished;
     }
     for (int i = 0; i < countryInfo->eventTurnBeginsNum; ++i) {
-        countryInfo->arrEventFinished_EventTurnBegin[i] = this->List_event_turnBegin[i]->isFinished;
+        countryInfo->arr_eventFinished_turnBegin[i] = this->List_event_turnBegin[i]->isFinished;
     }
     for (int i = 0; i < countryInfo->eventResolutionsNum; ++i) {
-        countryInfo->arrEventFinished_EventResolution[i] = this->List_resolution[i]->isFinished;
+        countryInfo->arr_eventFinished_resolution[i] = this->List_resolution[i]->isFinished;
     }
     countryInfo->PolicyType_military = this->PolicyType_military;
     countryInfo->PolicyType_economy = this->PolicyType_economy;
@@ -6323,14 +6369,14 @@ int CArea::Check_moveBestStatusArmyToOtherArea(bool isAutomaticRemoval) {
                     return areaID_passedAtAround;
                 auto theAreaSurroundingInfo = g_areaSurroundingInfoManager.Get_theAreaSurroundingInfo(this->ID);
                 //指定优先查找的单位
-                std::vector<  NewArmyDef::servicesType> list_foundArmyType_priority;
+                std::vector<  CountryArmyDef::servicesType> list_foundArmyType_priority;
                 if (foundArmy_byFor->Is_artillery() || foundArmy_byFor->Is_remoteAttack())
-                    list_foundArmyType_priority.push_back(NewArmyDef::Tank);
+                    list_foundArmyType_priority.push_back(CountryArmyDef::Tank);
                 else if(foundArmy_byFor->Is_panzer())
-                    list_foundArmyType_priority.push_back(NewArmyDef::Infantry);
+                    list_foundArmyType_priority.push_back(CountryArmyDef::Infantry);
                 else if(foundArmy_byFor->Is_tank()){
-                    list_foundArmyType_priority.push_back(NewArmyDef::Tank);
-                    list_foundArmyType_priority.push_back(NewArmyDef::Panzer);
+                    list_foundArmyType_priority.push_back(CountryArmyDef::Tank);
+                    list_foundArmyType_priority.push_back(CountryArmyDef::Panzer);
                 }
                 int areaID_hasExistNearestArmy = g_newAiAction.Get_areaID_existNearestArmy(this->ID, &list_foundArmyType_priority, 6);
                 //如果没找到敌情就随便移动到周围的可自由通行地块上
@@ -6917,10 +6963,10 @@ void CCountry::LoadCountry(const SaveCountryInfo *countryInfo) {
     this->MaxArmyDesignationsAir = countryInfo->MaxArmyDesignationsAir;
     this->SpecialMark = countryInfo->SpecificMark;
     this->OilConversionRate = countryInfo->OilConversionRate;
-    memcpy(New_Card_CDRound_Current, countryInfo->New_Card_CDRound_Current,
-           sizeof(New_Card_CDRound_Current));
-    memcpy(New_Card_CDRound_Each, countryInfo->New_Card_CDRound_Each,
-           sizeof(New_Card_CDRound_Each));
+    memcpy(Arr_cardCD_inTheTurn, countryInfo->New_Card_CDRound_Current,
+           sizeof(Arr_cardCD_inTheTurn));
+    memcpy(Arr_cardCD_inSetting, countryInfo->New_Card_CDRound_Each,
+           sizeof(Arr_cardCD_inSetting));
     this->PolicyType_military = countryInfo->PolicyType_military;
     this->PolicyType_economy = countryInfo->PolicyType_economy;
     this->IsNewActionOver = countryInfo->IsNewActionOver;
@@ -7202,7 +7248,7 @@ bool CArea::Is_supplyPort() {
 }
 
 
-int CArea::Get_count_desigantions() {
+int CArea::Get_countOfDesigantions() {
     int selfCount = 0;
     for (int i = 0; i < this->ArmyCount; ++i) {
         CArmy* army_byFOr = this->GetArmy(i);
@@ -7250,7 +7296,7 @@ bool CArea::Is_existNoAlly(int ringCount, int armys_noAlly) {
 }
 
 //是否存在指定单位的军种类型
-bool CArea::Is_existTheServicesType(std::vector< NewArmyDef::servicesType>&  list_armyType) {
+bool CArea::Is_existTheServicesType(std::vector< CountryArmyDef::servicesType>&  list_armyType) {
     if(list_armyType.size() <= 0)
         return false;
     bool found = false;
@@ -7258,27 +7304,27 @@ bool CArea::Is_existTheServicesType(std::vector< NewArmyDef::servicesType>&  lis
         auto army_byFOr = this->GetArmy(i);
         for (int j = 0; j < list_armyType.size(); ++j) {
             auto armyType_byFor = list_armyType[j];
-            if (armyType_byFor == NewArmyDef::Infantry){
+            if (armyType_byFor == CountryArmyDef::Infantry){
                 if (army_byFOr->Is_infantry())
                     found = true;
             }
-            else if (armyType_byFor == NewArmyDef::Panzer){
+            else if (armyType_byFor == CountryArmyDef::Panzer){
                 if (army_byFOr->Is_panzer())
                     found = true;
             }
-            else if (armyType_byFor == NewArmyDef::Artillery){
+            else if (armyType_byFor == CountryArmyDef::Artillery){
                 if (army_byFOr->Is_artillery())
                     found = true;
             }
-            else if (armyType_byFor == NewArmyDef::Tank){
+            else if (armyType_byFor == CountryArmyDef::Tank){
                 if (army_byFOr->Is_tank())
                     found = true;
             }
-            else if (armyType_byFor == NewArmyDef::AirForce){
+            else if (armyType_byFor == CountryArmyDef::AirForce){
                 if (army_byFOr->Is_airForce())
                     found = true;
             }
-            else if (armyType_byFor == NewArmyDef::Navy){
+            else if (armyType_byFor == CountryArmyDef::Navy){
                 if (army_byFOr->IsNavy())
                     found = true;
             }
@@ -7452,7 +7498,7 @@ int CArmy::Get_armyValue() {
         default:
             break;
     }
-    value += this->Get_count_card() * 50;
+    value += this->Get_countOfCard() * 50;
     if(this->HasCard(Commander))
         value+=200;
     if (this->GetNumDices() < 3)
@@ -7763,7 +7809,7 @@ void NewAiAction::Try_TheArmy_toTargetArea_alongOptimalRoute(int startAreaID, CA
      * 【创建时间】： 2022/8/1 <p>
      * 【修改时间】： 2022/10/9
      */
-int NewAiAction::Get_areaID_existNearestArmy(int startAreaID, std::vector<NewArmyDef::servicesType>* list_servicesType_toBePrioritySearch, int maxRingCount_toPrioritySearch) {
+int NewAiAction::Get_areaID_existNearestArmy(int startAreaID, std::vector<CountryArmyDef::servicesType>* list_servicesType_toBePrioritySearch, int maxRingCount_toPrioritySearch) {
     auto theAreaSurroundingInfo = g_areaSurroundingInfoManager.Get_theAreaSurroundingInfo(startAreaID);
     int ringCount = theAreaSurroundingInfo->Get_ringCount();
     if (maxRingCount_toPrioritySearch > ringCount)
@@ -7958,8 +8004,8 @@ void NewAiAction::Add_newArmy_toImportantTown(CCountry* theCountry) {
     auto tankCard = CObjectDef::Instance()->GetCardDef(CARD_ID::TankCard);
     auto armourCard = CObjectDef::Instance()->GetCardDef(CARD_ID::ArmourCard);
 //价值垫底就不管了
-   int infantrysPrice = infantryCard->Price * list_areaID.size()-1;
-    int infantryIndustry = infantryCard->Industry * list_areaID.size()-1;
+   int infantrysPrice = infantryCard->Price * (list_areaID.size()-1);
+    int infantryIndustry = infantryCard->Industry * (list_areaID.size()-1);
     for (int i = 0; i < list_areaID.size(); ++i) {
 
         auto area = g_Scene.GetArea(list_areaID[i]);
@@ -8076,19 +8122,19 @@ void CArea::Recover_armyState() {
                 continue;
             }
         }
-        replenishment = 0;
+       int newReplenishment = 0;
         //如果存在指挥官
         if (theArmy->HasCard(CArmy::Commander)) {
             int level1 = this->Country->GetCommanderLevel();
             if (GetCommanderAbility(level1).Supply > GetArmySupply(level1)) {
-                replenishment += GetCommanderAbility(level1).Supply;
+                newReplenishment += GetCommanderAbility(level1).Supply;
             }
             else {
-                replenishment += GetArmySupply(level1);
+                newReplenishment += GetArmySupply(level1);
             }
         }
         else{
-            theArmy->AddStrength(replenishment);
+            theArmy->AddStrength(newReplenishment);
         }
         theArmy->TurnEnd();
     }
@@ -8298,7 +8344,7 @@ void NewCountryAction::Collect_arae_existArmy(CArea* collectArea) {
 //     * 【修改时间】： 2022/8/12
 //     */
 //void CScene::Render() {
-//    //TODO 做
+//    //TODO 新地图（地块大于等于原版地块数）可以把这个注释的函数打开。
 //    if (AreaList.empty())
 //        return;
 //    float xFactor = g_contenscalefactor ;
@@ -8464,7 +8510,7 @@ void NewCountryAction::Collect_area_existAirForce(CArea* collectArea) {
 void NewCountryAction::Collect_area_opportunityForAttack(CArea* collectArea) {
     int selfCount = 0;
     int enemyCount = 0;
-    selfCount = collectArea->Get_count_desigantions();
+    selfCount = collectArea->Get_countOfDesigantions();
 
     int count_aroundAreas = g_Scene.GetNumAdjacentAreas(collectArea->ID);
     for (int i = 0; i < count_aroundAreas ; ++i) {
@@ -8472,7 +8518,7 @@ void NewCountryAction::Collect_area_opportunityForAttack(CArea* collectArea) {
         if (g_Scene.Is_waring(collectArea->ID, aroundArea_byFOr->ID)){
             //高级AI有70%概率猜中隐藏的军级单位
             if (g_GameManager.IsIntelligentAI){
-                int realCount = aroundArea_byFOr->Get_count_desigantions();
+                int realCount = aroundArea_byFOr->Get_countOfDesigantions();
                 int tempCount = realCount - enemyCount;
                 for (int j = 0; j < tempCount; ++j) {
                     int r = GetRand()%100 +1;
@@ -8493,7 +8539,7 @@ void NewCountryAction::Collect_area_opportunityForAttack(CArea* collectArea) {
         }
             //匹配周围是前线地块的我方地块
         else if(aroundArea_byFOr->Country == this->ActionCountry && this->Arr_area_isFrontLine[aroundArea_byFOr->ID]){
-            selfCount+= aroundArea_byFOr->Get_count_desigantions();
+            selfCount+= aroundArea_byFOr->Get_countOfDesigantions();
         }
     }
     //注意：除数不能为0

@@ -91,10 +91,13 @@ ecText *ArmyMovementText;
 ecText *ArmyDesignation;
 
 //新建国需要添加到这个国家列表中，然后在army_hd.xml中，要把小国旗加上。
-const char *arr_country[] = {"gb", "ru", "am", "fr", "ja", "it", "de", "ca", "fl", "ro", "bg", "be", "gr", "cn", "tw", "in", "au", "pl", "hu", "yu", "ch", "se", "pt", "dk", "no", "nl", "es", "mx", "nk", "rk", "tr", "ne", "bb"};
+const char *arr_country[] = {"gb", "ru", "am", "fr", "ja", "it", "de", "ca", "fl", "ro", "bg", "be",
+                             "gr", "cn", "tw", "in", "au", "pl", "hu", "yu", "ch", "se", "pt", "dk",
+                             "no", "nl", "es", "mx", "nk", "rk", "tr", "ne", "bb"};
 //剧本加载时被调用
 void CGameRes::Load() {
-    const char *medal_list[] = {"gb", "de", "am", "fr", "it", "ru", "ja", "cn", "tw", "common_1", "common_2", "common_3", "zhukov", "manstein", "eisenhower"};
+    const char *medal_list[] = {"gb", "de", "am", "fr", "it", "ru", "ja", "cn", "tw",
+                                "common_1", "common_2", "common_3", "zhukov", "manstein", "eisenhower"};
     const char *alliance_list[] = {"blue", "green", "red", "gray"};
     const char *installtion_list[] = {"fortress", "wire", "aagun", "radar"};
 
@@ -271,9 +274,9 @@ static unsigned long HpColor(int HP, int MaxHP) {
     }
     return b + (g << 8) + (r << 16) - 0x1000000ul;
 }
-static unsigned long OrganizationColor(int o, int retreat) {
+static unsigned long OrganizationColor(int organization, int collapse) {
     int r, g, b;
-    if (o  < retreat) {
+    if (organization < collapse) {
         r = 255;
         g = 150;
         b = 0;
@@ -284,9 +287,8 @@ static unsigned long OrganizationColor(int o, int retreat) {
     }
     return b + (g << 8) + (r << 16) - 0x1000000ul;
 }
-void CGameRes::RenderArmyOrganization(int x,int y,int organization,int retreat,int armyCount){
-//    Image_OrganizationBar->Render(x-10, y-30.0f);
-    Image_OrganizationFill->SetColor(OrganizationColor(organization, retreat), -1);
+void CGameRes::RenderArmyOrganization(int x, int y, int organization, int collapse, int armyCount){
+    Image_OrganizationFill->SetColor(OrganizationColor(organization, collapse), -1);
     float _x = 13.0f;
     float _y = 10.0f;
         _y += (armyCount -1) *2.0f;

@@ -53,7 +53,7 @@ struct CGameRes {
 #ifdef __cplusplus
     //绘制番号
     void RenderArmyDesignation(int designation,float  x, float y,int armyCount);
-    void RenderArmyOrganization(int x,int y,int organization,int retreat,int armyCount);
+    void RenderArmyOrganization(int x, int y, int organization, int collapse, int armyCount);
     void Load();
 
     void Release();

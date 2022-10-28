@@ -106,7 +106,7 @@ struct ArmyDef {
     int Miss;//闪避值
 
 };
-struct NewArmyDef{
+struct CountryArmyDef{
     enum servicesType {
         //添加新成员记得修改 Is_existTheServicesType函数
         Infantry,//0
