@@ -32,21 +32,8 @@ public class testActivity extends ModActivity {
     private TextView terrainPenaltyAirForceValue;
     private TextView terrainPenaltyMovementValue;
 
-    static String needAnnexCountryID;
     //添加新的成员记得在onCreat中初始化
-    static TextView notice_titileView;
-    static TextView notice_contentView;
-    static TextView surrender_titileView;
-    static TextView surrender_contentView;
-    static TextView resulution_titileView;
-    static TextView resulution_contentView;
 
-    static Button form_btn1;
-    static Button form_btn2;
-    static Button surrender_btn1;
-    static Button surrender_btn2;
-    static Button resolution_btn1;
-    static Button resolution_btn2;
     public  Button 按钮_于_单按钮窗口;
     public  Button 按钮1_于_双按钮三拖动条窗口;
     public  Button 按钮2_于_双按钮三拖动条窗口;
@@ -90,11 +77,6 @@ public class testActivity extends ModActivity {
     public AlertDialog 双按钮窗口;
     public AlertDialog 三按钮窗口;
     public AlertDialog 双按钮三拖动条窗口;
-    public static AlertDialog dialog;
-    public static AlertDialog surrenderDialog;
-    public static AlertDialog chooseAIDialogDialog;
-    public static AlertDialog difficultySelectionDialog;
-    public static AlertDialog publishDialog;
     public native void TriggerResulution(String countryID, int eventNum, int btnNum);
     //初始化事件窗口 此函数名不可变更
     @Override
@@ -142,19 +124,6 @@ public class testActivity extends ModActivity {
         初始化_三按钮窗口();
         初始化_双选择三进度条窗口();
         BaseEvent.得到基类唯一实例对象();
-        notice_titileView = new TextView(activity);
-        notice_contentView = new TextView(activity);
-        surrender_titileView = new TextView(activity);
-        surrender_contentView = new TextView(activity);
-        resulution_titileView = new TextView(activity);
-        resulution_contentView = new TextView(activity);
-
-        form_btn1 = new Button(this);
-        form_btn2 = new Button(this);
-        surrender_btn1 = new Button(this);
-        surrender_btn2 = new Button(this);
-        resolution_btn1 = new Button(this);
-        resolution_btn2 = new Button(this);
         初始化_地形信息_窗口();
     }
     public static testActivity 得到唯一实例对象(){
@@ -299,6 +268,7 @@ public class testActivity extends ModActivity {
     }
 
     public static void 展开_决议窗口(){
+
         ScrollView 滑动条窗口 = new ScrollView(activity);
         滑动条窗口.addView(得到唯一实例对象().决议布局);
         activity.决议窗口.setView(滑动条窗口);

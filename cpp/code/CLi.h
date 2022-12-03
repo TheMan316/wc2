@@ -74,7 +74,7 @@ struct ecEffectResManager {
 
 
 const CommanderAbility& GetCommanderAbility(int Level);
-const NewArmyAbility& GetArmyNewAbility(int Level);
+const NewArmyAbility& Get_armyAbility(int Level);
 bool Can_breakTargetArmor(CArmy* startArmy,CArmy* targetArmy);
 int Get_attackValue_formStartArmyAttackTargetArmy(CFight* fight, CArmy* startArmy, CArmy* targetArmy, bool isStart);
 void Increase_damage_accordingToRestraintRelationship(CArmy* startArmy, CArmy* targetArmy, int& targetAttackTotal, int& startAttackTotal);
@@ -151,7 +151,7 @@ void Init_countryCardRound();
 void Set_newArmyDef(ArmyDef* armydef);
 //包含在GetArmyDef中
 ArmyDef* Get_newArmyDef(int ID, const char* CountryName);
-void InitListArmyDef();
+void Init_listCountryArmydef();
 void Add_newArmy_toArea(int areaID, int armyID);
 void Add_newArmyDef_toList(ArmyDef* armydef, char* countryName);
 void ResetArmyDef(ArmyDef* armyDef,int extraHp,int extraMinAttack,int extraMaxAttack,int extraMovement);

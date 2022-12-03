@@ -37,7 +37,7 @@ public:
     //记录该圈层地块所在的圈层号
     void Set_ringNum_areaOnRing(int areaOnRing_ID, int ringNum);
     //记录该圈层地块在其圈层的下标位置
-    void Set_index_areaOnRingAtRing(int areaInRing_ID, int indexAtRing);
+    void Set_index_ofAreaOnRingAtRing(int areaInRing_ID, int indexAtRing);
 
     std::vector<CAreaOnRing*>* Get_ringInfo(int ringNumber);
     //通过指定的ID得到 areaOnRing 请在输入参数前对其进行检查

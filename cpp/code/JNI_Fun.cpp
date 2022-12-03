@@ -26,8 +26,7 @@ void JNI_Fun::Show_resolutionForm() {
     }
 }
 void Auto_creatResolutions_toTheForm(CCountry* country, JNIEnv* env, jclass* activity) {
-    //如果是德国
-    if (strcmp(country->ID, "de") == 0) {
+
         for (int i = 0; i < country->List_resolution.size(); ++i) {
             auto resolution = country->List_resolution[i];
             if ( g_commonEvent.Can_triggere_resolution(resolution,country) == false)
@@ -75,7 +74,7 @@ void Auto_creatResolutions_toTheForm(CCountry* country, JNIEnv* env, jclass* act
                                           env->NewStringUTF(resolution->btn3));
             }
         }
-    }
+
 }
 //主界面新窗口
 extern "C" JNIEXPORT void JNICALL Java_com_easytech_wc2_testActivity_DiplomaticOfCountry(JNIEnv *Env, jclass, jstring CountryID) {

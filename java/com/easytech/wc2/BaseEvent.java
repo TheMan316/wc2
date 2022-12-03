@@ -57,8 +57,8 @@ public class BaseEvent {
     public static void 旧展示_决议窗口() {
         testActivity 对象 = testActivity.得到唯一实例对象();
         ScrollView scrollView = new ScrollView(testActivity.得到唯一实例对象());
-        scrollView.addView(testActivity.得到唯一实例对象().决议布局);
-        对象.runOnUiThread(() -> testActivity.得到唯一实例对象().决议窗口 = testActivity.得到唯一实例对象().决议构造器.setCancelable(true).setView(scrollView).show());
+        scrollView.addView(对象.决议布局);
+        对象.runOnUiThread(() -> 对象.决议窗口 = 对象.决议构造器.setCancelable(true).setView(scrollView).show());
     }
     public static void 旧重置_决议窗口() { ;
         testActivity.得到唯一实例对象().决议构造器 = new AlertDialog.Builder(testActivity.得到唯一实例对象());

@@ -48,9 +48,18 @@ static bool sArr_foundArea[s_Count_theMapAreas]; //用来记录某某地块是�
 static std::vector<CountryArmyDef *> s_ListCountryArmydef;  //在Add_newArmyDef_toList 中为其添加元素
 std::vector<CardDef *> NewCardDef; //在LoadCardDef中初始化  有几张卡就有几个元素
 static std::vector<int *> s_ListNewCardIndex; //按顺序存放每个类别各个卡牌的下标
-////卡牌冷却时间：仅对玩家有效
-//static std::vector<int> Arr_cardCD_inTheTurn;
-//static std::vector<int> Arr_cardCD_inSetting;
+
+
+static char TempStr[128];
+static char TempStrCity[16];
+static char TempStrIndustry[16];
+static char TempStrOil[16];
+ecText *OilTaxText;
+ecText *CityGrowthRateText;
+ecText *IndustryGrowthRateText;
+ecText *OilGrowthRateText;
+ecText *OilGoldText;
+ecText *OilCollectText;
 
 static float arrUnitDrawnOffset[]= {10.0f,13.0f,15.0f,17.0f,10.0f,13.0f,15.0f,17.0f,10.0f,13.0f,15.0f,17.0f,10.0f,13.0f,15.0f,17.0f}; //16
 //
@@ -96,7 +105,7 @@ const CommanderAbility &GetCommanderAbility(int Level) {
     }
 }
 
-const NewArmyAbility& GetArmyNewAbility(int Level) {
+const NewArmyAbility& Get_armyAbility(int Level) {
     static const NewArmyAbility data[] = {{0, 0, 0,0,0,0},
                                           {1, 0, 1,0,0,0},
                                           {1, 1, 1,1,5,0},
@@ -151,7 +160,7 @@ unsigned int GetRand(CArmy *army) {
  * 定义在CLi.h
  */
 int GetArmyAtkBuff(int level) {
-    return GetArmyNewAbility(level).Assault;
+    return Get_armyAbility(level).Assault;
 }
 
 /*
@@ -159,7 +168,7 @@ int GetArmyAtkBuff(int level) {
  * 定义在CLi.h
  */
 int GetArmyDfsBuff(int level) {
-    return GetArmyNewAbility(level).Shield;
+    return Get_armyAbility(level).Shield;
 }
 
 /*
@@ -167,7 +176,7 @@ int GetArmyDfsBuff(int level) {
  * 定义在CLi.h
  */
 int GetArmySupply(int level) {
-    return GetArmyNewAbility(level).RecoverHp_eachTurn;
+    return Get_armyAbility(level).RecoverHp_eachTurn;
 
 }
 /**
@@ -242,24 +251,24 @@ void CCountry::TurnEnd() {
 /*
  * 判断这个地块能否建造建筑
  */
-bool CArea::CanConstruct(int ConstructionType) {
-    if (this->Sea == true) {
+bool CArea::CanConstruct(int construction_willBeBuilt) {
+    if (this->Sea) {
         return false;
     }
     if (this->ConstructionType == NoConstruction) {
         return true;
     }
-    if (ConstructionType == city) {
-        if (this->ConstructionLevel < 4&&this->ConstructionType == city) {
+    if (construction_willBeBuilt == city) {
+        if (this->ConstructionLevel < 4 && this->ConstructionType == city) {
             return true;
         }
     }
-    else if (ConstructionType == industry) {
-        if (this->ConstructionLevel < 3&&this->ConstructionType == industry) {
+    else if (construction_willBeBuilt == industry) {
+        if (this->ConstructionLevel < 3 && this->ConstructionType == industry) {
             return true;
         }
     }
-    else if (ConstructionType == airport) {
+    else if (construction_willBeBuilt == airport) {
         if (this->ConstructionLevel <= 0) {
             return true;
         }
@@ -314,22 +323,22 @@ void Set_armyBuff(CFight *fight, CArmy *army, CArea *area, bool isStartArmy) {
     else if (army->Morale == 2) {
         attack += 1;
     }
-    int armyAtkBuff_Level = GetArmyAtkBuff(army->Level);
-    int armyDfsBuff_Level = GetArmyDfsBuff(army->Level);
+    int armyAtkBuff_fromLevel = GetArmyAtkBuff(army->Level);
+    int armyDfsBuff_fromLevel = GetArmyDfsBuff(army->Level);
     //如果这个单位存在指挥官卡
     if (army->HasCard(CArmy::Commander)) {
         CommanderAbility commanderAbility = GetCommanderAbility(army->Country->GetCommanderLevel());
         int commanderAtkBuff = commanderAbility.Assault;
         int commanderDfsBuff = commanderAbility.Shield;
         //在指挥官和等级之中取提供的最高攻防加成
-        if (armyAtkBuff_Level > commanderAtkBuff) {
-            attack += armyAtkBuff_Level;
+        if (armyAtkBuff_fromLevel > commanderAtkBuff) {
+            attack += armyAtkBuff_fromLevel;
         }
         else {
             attack += commanderAtkBuff;
         }
-        if (armyDfsBuff_Level > commanderDfsBuff) {
-            defense += armyDfsBuff_Level;
+        if (armyDfsBuff_fromLevel > commanderDfsBuff) {
+            defense += armyDfsBuff_fromLevel;
         }
         else {
             defense += commanderDfsBuff;
@@ -337,8 +346,8 @@ void Set_armyBuff(CFight *fight, CArmy *army, CArea *area, bool isStartArmy) {
 
     }
     else {
-        attack += armyAtkBuff_Level;
-        defense += armyDfsBuff_Level;
+        attack += armyAtkBuff_fromLevel;
+        defense += armyDfsBuff_fromLevel;
     }
     if (isStartArmy == true) {
         fight->StartArmyDefence += defense;
@@ -412,7 +421,7 @@ void CArmy::TurnEnd() {
         //恢复基础组织度
         this->Restore_oganization(this->BasicAbilities->RecoverOrganization);
         //根据等级恢复额外组织度
-        auto data = GetArmyNewAbility(this->Level);
+        auto data = Get_armyAbility(this->Level);
         this->Restore_oganization(data.RecoverOgranization_eachTurn);
     }
 }
@@ -603,15 +612,15 @@ int CArea::Get_oil() {
     return oil;
 }
 
-int CArea::GetCityGrowthRate() {
+int CArea::Get_cityGrowthRate() {
     return this->CityGrowthRate;
 }
 
-int CArea::GetIndustryGrowthRate() {
+int CArea::Get_industryGrowthRate() {
     return this->IndustryGrowthRate;
 }
 
-int CArea::GetOilGrowthRate() {
+int CArea::Get_oilGrowthRate() {
     return this->OilGrowthRate;
 }
 /*
@@ -888,7 +897,7 @@ int CArmy::Get_countOfCard(){
 void CArmy::AddExp(int exp){
     if(this->Level <= 3){
         this->Exp += exp;
-        NewArmyAbility armyAbility = GetArmyNewAbility(this->Level);
+        NewArmyAbility armyAbility = Get_armyAbility(this->Level);
         if (!this->IsNavy()){
             if (this->Exp >= 700 && this->Level < 4){
                 this->Upgrade();
@@ -922,11 +931,11 @@ void CArmy::AddExp(int exp){
 void CArmy::Upgrade(){
     if(this->Level <4){
         this->Level += 1;
-        NewArmyAbility newArmyAbility = GetArmyNewAbility(this->Level);
+        NewArmyAbility newArmyAbility = Get_armyAbility(this->Level);
         //回血量为最大血量的百分之20
         this->AddStrength(this->MaxHp / 5);
 
-        auto data = GetArmyNewAbility(this->Level);
+        auto data = Get_armyAbility(this->Level);
         this->MaxHp += this->MaxHp * data.Increase_percentageOfMaxHP / 100;
         this->MaxOrganization += data.Increase_percentageOfMaxOgranization;
     }
@@ -2365,7 +2374,7 @@ void AreaSurroundingInfoManager::InitListAreaSurroundingInfo() {
             int areaOnRing_ID,indexOnRing;
             file_areaSurroundingInfo->Read(&areaOnRing_ID, sizeof(int));
             file_areaSurroundingInfo->Read(&indexOnRing, sizeof(int));
-            areaSurroundingInfo->Set_index_areaOnRingAtRing(areaOnRing_ID, indexOnRing);
+            areaSurroundingInfo->Set_index_ofAreaOnRingAtRing(areaOnRing_ID, indexOnRing);
         }
         file_areaSurroundingInfo->Read(&numOfRings, sizeof(int));
         //读取圈层数量
@@ -3280,7 +3289,7 @@ void CFight::ApplyResult() {
                 startArmy->Movement += 1;
             }
         }
-         if (targetArea->ArmyCount == 0) {
+        if (targetArea->ArmyCount == 0) {
             int r = GetRand() % 100;
             //50%概率打掉工事
             if (r <= 49) {
@@ -4789,6 +4798,7 @@ void CCountry::UseCard(CardDef *Card, int TargetAreaID, int ArmyIndex) {
         CArea *targetArea = TargetAreaID >= 0 ? g_Scene[TargetAreaID] : NULL;
         if (targetArea == nullptr)
             return;
+        //管理所有的新卡牌
         if (IsNewCard(Card->ID)) {
             if (Arr_cardCD_inTheTurn[Card->ID] == 0 && CheckCardTargetArea(Card, TargetAreaID)) {
                 if (Card->Type == CardDef::Army||Card->Type == CardDef::Navy) {
@@ -5392,7 +5402,19 @@ int SetTargetIsPlayer(CActionAssist* as,CArmy* targetArmy, CArea* targetArea){
     }
     return coefficient;
 }
-
+/**
+     *=======================================================<p>
+     * 【功能描述】：<p>
+     * 得到该地块所有单位的血量总和。<p>
+     * 【参数说明】：<p>
+     * 【返回值说明】：<p>
+     * void <p>
+     *=======================================================<p>
+     * 【创建人】： 馅饼<p>
+     * 【修改人】： ？？？<p>
+     * 【创建时间】： 2022 <p>
+     * 【修改时间】： ？？？
+     */
 int GetAreaArmysStrengthNum(CArea* area, bool isOnlyTop){
     if (area == nullptr){
         return -1;
@@ -5420,7 +5442,7 @@ int GetAreaArmysStrengthNum(CArea* area, bool isOnlyTop){
 def_easytech(_ZN10CObjectDef11LoadArmyDefEv)
 
 void CObjectDef::LoadArmyDef() {
-    InitListArmyDef();
+    Init_listCountryArmydef();
 //    easytech(_ZN10CObjectDef11LoadArmyDefEv)(this);
     auto *InfantryD_1905 = new ArmyDef{"InfantryD_1905", ArmyDef::InfantryD1905,
                                        60, 2, 1, 6, 0, 0,
@@ -5512,7 +5534,7 @@ void CObjectDef::LoadArmyDef() {
     Set_newArmyDef(Boom_1914);
 }
 
-void InitListArmyDef() {
+void Init_listCountryArmydef() {
     CountryArmyDef *newArmyDef = new CountryArmyDef();
     strcpy(newArmyDef->CountryName, "other");
     s_ListCountryArmydef.push_back(newArmyDef);
@@ -5682,6 +5704,7 @@ void CObjectDef::LoadCardDef() {
     LoadMusic();
 //    for (CardDef Card : CardDef28)
 //        NewCardDef.push_back(Card);
+
     //设置各个国家的卡牌冷却回合在   Init_countryCardRound
     auto *Infantry = new CardDef{(string *) "InfantryD1905", (string *) "card_0.png",
                                  (string *) "InfantryD1905 Intro", CARD_ID::InfantryCard, CardDef::Army,
@@ -5959,7 +5982,7 @@ void GUIBuyCard::SelCard(int CardTab, int Index) {
     else
         ButtonOK->SetEnable(false);
 }
-
+//游戏存档相关，十分重要。如果国家、地块、军队等类有新成员，要记得存档时把它们的数据保存下来！
 void CGameManager::SaveGame(const char *FileName) {
     ecFile *File = new ecFile();
     if ((GameMode == Campaign||GameMode == Conquest)&&
@@ -6032,17 +6055,6 @@ void CGameManager::SaveGame(const char *FileName) {
     delete File;
 }
 
-static char TempStr[128];
-static char TempStrCity[16];
-static char TempStrIndustry[16];
-static char TempStrOil[16];
-ecText *OilTaxText;
-ecText *CityGrowthRateText;
-ecText *IndustryGrowthRateText;
-ecText *OilGrowthRateText;
-
-ecText *OilGoldText;
-ecText *OilCollectText;
 
 void GUITax::OnRender() {
     GUIRect Rect{};
@@ -6070,13 +6082,13 @@ void GUITax::OnRender() {
     sprintf(TempStr, "%d", g_Scene.GetSelectedArea()->Get_oil());
     OilTaxText->SetText(TempStr);
     OilTaxText->DrawText(Rect.Pos[0] + 50.0f, Rect.Pos[1] + 64.0f, 1);
-    sprintf(TempStr, "%d", g_Scene.GetSelectedArea()->GetCityGrowthRate());
+    sprintf(TempStr, "%d", g_Scene.GetSelectedArea()->Get_cityGrowthRate());
     CityGrowthRateText->SetText(TempStr);
     CityGrowthRateText->DrawText(Rect.Pos[0] + 50.0f, Rect.Pos[1] + 84.0f, 1);
-    sprintf(TempStr, "%d", g_Scene.GetSelectedArea()->GetIndustryGrowthRate());
+    sprintf(TempStr, "%d", g_Scene.GetSelectedArea()->Get_industryGrowthRate());
     IndustryGrowthRateText->SetText(TempStr);
     IndustryGrowthRateText->DrawText(Rect.Pos[0] + 50.0f, Rect.Pos[1] + 104.0f, 1);
-    sprintf(TempStr, "%d", g_Scene.GetSelectedArea()->GetOilGrowthRate());
+    sprintf(TempStr, "%d", g_Scene.GetSelectedArea()->Get_oilGrowthRate());
     OilGrowthRateText->SetText(TempStr);
     OilGrowthRateText->DrawText(Rect.Pos[0] + 50.0f, Rect.Pos[1] + 124.0f, 1);
 }
@@ -7694,7 +7706,7 @@ void CAreaSurroundingInfo::NextRecursion(std::vector<std::vector<CAreaOnRoute>*>
 
 
 
-void CAreaSurroundingInfo::Set_index_areaOnRingAtRing(int areaInRing_ID, int indexAtRing) {
+void CAreaSurroundingInfo::Set_index_ofAreaOnRingAtRing(int areaInRing_ID, int indexAtRing) {
     ( Map_index_areaOnRingAtRing)[areaInRing_ID] = indexAtRing;
 }
 /**

@@ -251,9 +251,9 @@ void Trigger_eventTurnBegin_theScript(CCountry *country) {
 
 void Init_events_theScript() {
 
-    Init_events_common_conquer1();
-    Init_events_de_conquer1();
-    Init_resolutions_de_conquer1();
+    Init_events_common_conquest1();
+    Init_events_de_conquest1();
+    Init_resolutions_de_conquest1();
 
 }
 

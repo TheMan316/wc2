@@ -329,12 +329,12 @@ bool Is_existTheServicesType(std::vector< CountryArmyDef::servicesType>&  list_a
     void SetAllArmyPoisoning(int state);
     void SaveAera(SaveAreaInfo *);
     void Army_followTheRouteToTargetArea(CArmy *theArmy, std::vector<int>& linePassed);
-    int GetCityGrowthRate();
-    int GetIndustryGrowthRate();
+    int Get_cityGrowthRate();
+    int Get_industryGrowthRate();
     bool Is_supplyPoint(CArmy* needSupplyArmy);
     bool Is_supplyCity();
     void Check_retreatableArmy(int ringCount);
-    int GetOilGrowthRate();
+    int Get_oilGrowthRate();
     bool Try_armyToSuppliedArea(CArmy *theArmy, std::vector<std::vector<int>*>& list_linePassed);
     int Check_moveBestStatusArmyToOtherArea(bool isAutomaticRemoval);
     bool Is_existMilitaryThreat(int ringCount, int EnemyCount, int alliance);
@@ -359,7 +359,7 @@ bool Is_existTheServicesType(std::vector< CountryArmyDef::servicesType>&  list_a
 
     void AllArmyPoisoning();
 
-    bool CanConstruct(int ConstructionType);
+    bool CanConstruct(int construction_willBeBuilt);
 
     bool CheckEncirclement();
 

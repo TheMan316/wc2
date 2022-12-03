@@ -10,9 +10,9 @@ extern CommonEvent g_commonEvent;
 void Init_resolutions_theScript(int scriptNum);
 void Init_events_theScript();
 //初始化征服1剧本中的德国事件和决议
-void Init_events_de_conquer1();
-void Init_resolutions_de_conquer1();
-void Init_events_common_conquer1();
+void Init_events_de_conquest1();
+void Init_resolutions_de_conquest1();
+void Init_events_common_conquest1();
 //管理在回合开始函数中 被触发的 所有事件
 void Trigger_eventTurnBegin_theScript(CCountry* country);
 //管理在移动函数中 被触发的 所有事件

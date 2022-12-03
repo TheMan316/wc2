@@ -2,7 +2,7 @@
 // Created by KK on 2022/10/7.
 //
 #include "event.h"
-void Init_resolutions_de_conquer1() {
+void Init_resolutions_de_conquest1() {
     CCountry *country = g_GameManager.FindCountry("de");
     //如果找到这个国家，设置它的事件
     if (country != nullptr) {
