@@ -128,8 +128,15 @@ CActionAssist::aiCheckMoveable(int StartAreaID, int TargetAreaID, int ArmyIndex,
     CArea *TargetArea = g_Scene[TargetAreaID];
     if ( TargetArea->Country != nullptr && ArmyArea->Country != TargetArea->Country && TargetArea->ArmyCount != 0)
         return false;
-    if (ArmyArea->Country != TargetArea->Country && g_Scene.Is_ally(ArmyAreaID,TargetAreaID))
-        return false;
+    //是否可以移动到盟友地块
+    if (ArmyArea->Country != TargetArea->Country && g_Scene.Is_ally(ArmyAreaID,TargetAreaID)){
+        if (TargetArea->ArmyCount > 0){
+            return false;
+        }
+        else if(TargetArea->Sea == false){
+            return false;
+        }
+    }
     if (ArmyArea->ArmyCount <= ArmyIndex)
         return false;
     CArmy *Army = ArmyArea->GetArmy(ArmyIndex);

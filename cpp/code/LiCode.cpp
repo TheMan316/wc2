@@ -1211,8 +1211,14 @@ void CArea::MoveArmyTo(CArea *targetArea) {
             if (targetArea->Sea) {
                 //移动力清空
                 frontArmy->Movement = 0;
-            }else{
-                frontArmy->Movement -= targetArea->Get_consumedMovement();
+            }
+            else{
+                if (this->Sea){
+                    frontArmy->Movement = 0;
+                }
+                else {
+                    frontArmy->Movement -= targetArea->Get_consumedMovement();
+                }
             }
             if (this->ArmyCount == 0) {
                 //重新设置该地块和其周围地块处于包围的状态（包含重新进行包围与否的检测）
@@ -1292,8 +1298,14 @@ void CArea::MoveArmyTo(CArea *targetArea, CArmy* actArmy, bool bottom) {
             if (targetArea->Sea) {
                 //移动力清空
                 actArmy->Movement = 0;
-            }else{
-                actArmy->Movement -= targetArea->Get_consumedMovement();
+            }
+            else{
+                if (this->Sea){
+                    actArmy->Movement = 0;
+                }
+                else{
+                    actArmy->Movement -= targetArea->Get_consumedMovement();
+                }
             }
             if (this->ArmyCount == 0) {
                 //重新设置该地块和其周围地块处于包围的状态（包含重新进行包围与否的检测）
